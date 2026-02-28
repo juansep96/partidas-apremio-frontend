@@ -1,0 +1,365 @@
+/* ========== HEADER ========== */
+.empleados-page {
+  min-height: 100%;
+}
+
+.empleados-header {
+  margin-bottom: 1.5rem;
+}
+
+.empleados-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.empleados-header p {
+  font-size: 0.9375rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ========== WIZARD STEPS ========== */
+.empleados-wizard {
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.empleados-wizard-steps {
+  display: flex;
+  align-items: stretch;
+  padding: 1rem 1.5rem;
+  gap: 0;
+  background: linear-gradient(to bottom, #fafbfc, #f8fafc);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.empleados-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.empleados-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.empleados-step.active .empleados-step-num {
+  background: #015a6a;
+  color: white;
+}
+
+.empleados-step.done .empleados-step-num {
+  background: #0d9488;
+  color: white;
+}
+
+.empleados-step-label {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empleados-step.active .empleados-step-label {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.empleados-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 0.5rem;
+  min-width: 1rem;
+}
+
+.empleados-step.done .empleados-step-line {
+  background: #0d9488;
+}
+
+/* ========== WIZARD CONTENT ========== */
+.empleados-wizard-content {
+  padding: 2rem;
+}
+
+/* ========== UPLOAD ========== */
+.empleados-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.empleados-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 28rem;
+  min-height: 10rem;
+  padding: 2rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.empleados-upload-zone:hover {
+  border-color: #015a6a;
+  background: #f0fdfa;
+}
+
+.empleados-upload-input {
+  display: none;
+}
+
+.empleados-upload-text {
+  font-size: 1rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.empleados-upload-hint {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+/* ========== ANALYZE ========== */
+.empleados-analyze,
+.empleados-preview {
+  max-width: 36rem;
+}
+
+.empleados-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.empleados-stat {
+  padding: 1rem 1.5rem;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 0.5rem;
+  min-width: 8rem;
+}
+
+.empleados-stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #015a6a;
+}
+
+.empleados-stat-label {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.empleados-warn {
+  font-size: 0.9375rem;
+  color: #dc2626;
+  margin: 0 0 1.5rem 0;
+}
+
+.empleados-preview-title {
+  font-size: 0.9375rem;
+  color: #334155;
+  margin: 0 0 1rem 0;
+}
+
+.empleados-discard,
+.empleados-confirm {
+  max-width: 36rem;
+}
+
+.empleados-discard-text {
+  font-size: 1rem;
+  color: #334155;
+  margin: 0 0 1.5rem 0;
+}
+
+.empleados-confirm-text {
+  font-size: 1rem;
+  color: #334155;
+  margin: 0 0 1.5rem 0;
+}
+
+/* ========== TABLE ========== */
+.empleados-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.empleados-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.empleados-table th,
+.empleados-table td {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.empleados-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.empleados-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.empleados-preview-more {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ========== ACTIONS ========== */
+.empleados-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.empleados-btn-primary {
+  padding: 0.625rem 1.25rem;
+  background: #015a6a;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.empleados-btn-primary:hover:not(:disabled) {
+  background: #027381;
+}
+
+.empleados-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.empleados-btn-ghost {
+  padding: 0.625rem 1.25rem;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.empleados-btn-ghost:hover {
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+/* ========== LOGS ========== */
+.empleados-logs {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.empleados-logs h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 1rem 0;
+}
+
+.empleados-logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.empleados-log-item {
+  padding: 0.875rem 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.empleados-log-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.empleados-log-file {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.empleados-log-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.empleados-log-completed .empleados-log-status {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.empleados-log-failed .empleados-log-status {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.empleados-log-pending .empleados-log-status {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.empleados-log-meta {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.empleados-log-error {
+  font-size: 0.8125rem;
+  color: #dc2626;
+  margin: 0.5rem 0 0 0;
+}
