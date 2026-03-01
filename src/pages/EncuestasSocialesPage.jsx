@@ -58,12 +58,25 @@ export default function EncuestasSocialesPage() {
   const [agregarNuevoIntegranteSaving, setAgregarNuevoIntegranteSaving] = useState(false);
   const [agregarNuevoIntegranteCargandoPadron, setAgregarNuevoIntegranteCargandoPadron] = useState(false);
   const integrantePadronCargadoRef = useRef(false);
+  const docFileInputRef = useRef(null);
   const [grupoQuitando, setGrupoQuitando] = useState(null);
   const [grupoGuardando, setGrupoGuardando] = useState(false);
   const [encuestaEditId, setEncuestaEditId] = useState(null);
   const [encuestaRenovando, setEncuestaRenovando] = useState(null);
   const [encuestaEliminando, setEncuestaEliminando] = useState(null);
   const [encuestaEliminarConfirmId, setEncuestaEliminarConfirmId] = useState(null);
+  const [fichaDocumentos, setFichaDocumentos] = useState([]);
+  const [fichaDocumentosLoading, setFichaDocumentosLoading] = useState(false);
+  const [fichaDocumentoUploading, setFichaDocumentoUploading] = useState(false);
+  const [fichaDocumentoDeleting, setFichaDocumentoDeleting] = useState(null);
+  const [docUploadForm, setDocUploadForm] = useState({ archivo: null, descripcion: '' });
+  const [fichaAsistencias, setFichaAsistencias] = useState([]);
+  const [fichaAsistenciasLoading, setFichaAsistenciasLoading] = useState(false);
+  const [fichaAsistenciaSaving, setFichaAsistenciaSaving] = useState(false);
+  const [fichaAsistenciaDeleting, setFichaAsistenciaDeleting] = useState(null);
+  const [camposAsistencia, setCamposAsistencia] = useState([]);
+  const [agregarAsistenciaOpen, setAgregarAsistenciaOpen] = useState(false);
+  const [agregarAsistenciaForm, setAgregarAsistenciaForm] = useState({ camposDinamicos: {} });
 
   const loadTitulares = useCallback(async () => {
     setLoading(true);
@@ -189,6 +202,7 @@ export default function EncuestasSocialesPage() {
           dni: res.persona.dni,
           apellido: res.persona.apellido,
           nombre: res.persona.nombre,
+          observaciones: res.persona.observaciones ?? '',
           camposDinamicos: { ...(res.persona.camposDinamicos || {}) },
         });
         setCamposTitular(camposRes?.data || []);
@@ -213,6 +227,166 @@ export default function EncuestasSocialesPage() {
     setFichaEditData(null);
     setGrupoEditando(null);
     setGrupoAgregarOpen(false);
+    setFichaDocumentos([]);
+    setFichaAsistencias([]);
+    setAgregarAsistenciaOpen(false);
+  };
+
+  const loadFichaAsistencias = useCallback(async () => {
+    if (!fichaPersona?.id || fichaPersona.esTitular === false) return;
+    setFichaAsistenciasLoading(true);
+    try {
+      const res = await dsApi.personas.asistencias.list(fichaPersona.id);
+      setFichaAsistencias(res.data || []);
+    } catch {
+      setFichaAsistencias([]);
+    } finally {
+      setFichaAsistenciasLoading(false);
+    }
+  }, [fichaPersona?.id, fichaPersona?.esTitular]);
+
+  useEffect(() => {
+    if (fichaRightTab === 'asistencias' && fichaPersona?.id) {
+      loadFichaAsistencias();
+    }
+  }, [fichaRightTab, fichaPersona?.id, loadFichaAsistencias]);
+
+  useEffect(() => {
+    if (fichaRightTab === 'asistencias' || agregarAsistenciaOpen) {
+      dsApi.camposDinamicos.list({ applies_to: 'asistencia' }).then((r) => {
+        const lista = r.data || [];
+        setCamposAsistencia(lista);
+        lista.filter((c) => c.tipo === 'select_tabla').forEach((c) => {
+          const tc = c.tablaConfig || {};
+          loadOpcionesTabla(tc.tabla || 'calles', tc.localidad || '');
+        });
+      }).catch(() => setCamposAsistencia([]));
+    }
+  }, [fichaRightTab, agregarAsistenciaOpen, loadOpcionesTabla]);
+
+  useEffect(() => {
+    if (agregarAsistenciaOpen && camposAsistencia.length > 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      setAgregarAsistenciaForm((prev) => {
+        const merged = { ...(prev.camposDinamicos || {}) };
+        let changed = false;
+        camposAsistencia.forEach((c) => {
+          if (c.tipo === 'date' && (merged[c.slug] === undefined || merged[c.slug] === '')) {
+            merged[c.slug] = today;
+            changed = true;
+          }
+        });
+        if (!changed) return prev;
+        return { ...prev, camposDinamicos: merged };
+      });
+    }
+  }, [agregarAsistenciaOpen, camposAsistencia]);
+
+  const crearAsistencia = async () => {
+    if (!fichaPersona?.id) return;
+    setFichaAsistenciaSaving(true);
+    try {
+      await dsApi.personas.asistencias.create(fichaPersona.id, {
+        camposDinamicos: agregarAsistenciaForm.camposDinamicos || {},
+      });
+      setAgregarAsistenciaOpen(false);
+      setAgregarAsistenciaForm({ camposDinamicos: {} });
+      loadFichaAsistencias();
+      refreshFicha();
+      sileo.success({ title: 'Asistencia registrada' });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err.message });
+    } finally {
+      setFichaAsistenciaSaving(false);
+    }
+  };
+
+  const eliminarAsistencia = async (a) => {
+    if (!fichaPersona?.id || !isDsAdmin) return;
+    setFichaAsistenciaDeleting(a.id);
+    try {
+      await dsApi.personas.asistencias.delete(fichaPersona.id, a.id);
+      loadFichaAsistencias();
+      refreshFicha();
+      sileo.success({ title: 'Asistencia eliminada' });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err.message });
+    } finally {
+      setFichaAsistenciaDeleting(null);
+    }
+  };
+
+  const loadFichaDocumentos = useCallback(async () => {
+    if (!fichaPersona?.id || fichaPersona.esTitular === false) return;
+    const personaId = fichaPersona.id;
+    setFichaDocumentosLoading(true);
+    try {
+      const res = await dsApi.personas.documentos.list(personaId);
+      setFichaDocumentos(res.data || []);
+    } catch {
+      setFichaDocumentos([]);
+    } finally {
+      setFichaDocumentosLoading(false);
+    }
+  }, [fichaPersona?.id, fichaPersona?.esTitular]);
+
+  useEffect(() => {
+    if (fichaRightTab === 'documentos' && fichaPersona?.id) {
+      loadFichaDocumentos();
+    }
+  }, [fichaRightTab, fichaPersona?.id, loadFichaDocumentos]);
+
+  const subirDocumento = async () => {
+    const personaId = fichaPersona?.id;
+    if (!personaId || !docUploadForm.archivo) return;
+    setFichaDocumentoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('archivo', docUploadForm.archivo);
+      fd.append('descripcion', docUploadForm.descripcion || '');
+      await dsApi.personas.documentos.upload(personaId, fd);
+      setDocUploadForm({ archivo: null, descripcion: '' });
+      if (docFileInputRef.current) docFileInputRef.current.value = '';
+      loadFichaDocumentos();
+      refreshFicha();
+      sileo.success({ title: 'Documento subido' });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err.message });
+    } finally {
+      setFichaDocumentoUploading(false);
+    }
+  };
+
+  const descargarDocumento = (doc) => {
+    const personaId = fichaPersona?.id;
+    if (!personaId) return;
+    dsApi.personas.documentos.download(personaId, doc.id, doc.nombreOriginal, 'attachment').catch((e) =>
+      sileo.error({ title: 'Error', description: e.message })
+    );
+  };
+
+  const abrirDocumento = (doc) => {
+    const personaId = fichaPersona?.id;
+    if (!personaId) return;
+    dsApi.personas.documentos.download(personaId, doc.id, doc.nombreOriginal, 'inline').catch((e) =>
+      sileo.error({ title: 'Error', description: e.message })
+    );
+  };
+
+  const eliminarDocumento = async (doc) => {
+    const personaId = fichaPersona?.id;
+    if (!personaId) return;
+    setFichaDocumentoDeleting(doc.id);
+    try {
+      await dsApi.personas.documentos.delete(personaId, doc.id);
+      loadFichaDocumentos();
+      refreshFicha();
+      sileo.success({ title: 'Documento eliminado' });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err.message });
+    } finally {
+      setFichaDocumentoDeleting(null);
+    }
   };
 
   const refreshFicha = useCallback(async () => {
@@ -539,6 +713,7 @@ export default function EncuestasSocialesPage() {
           dni: res.persona.dni,
           apellido: res.persona.apellido,
           nombre: res.persona.nombre,
+          observaciones: res.persona.observaciones ?? '',
           camposDinamicos: { ...(res.persona.camposDinamicos || {}) },
         });
         sileo.success({ title: 'Guardado' });
@@ -999,6 +1174,9 @@ export default function EncuestasSocialesPage() {
                         >
                           <span className="ficha-tab-icon">✓</span>
                           Asistencias
+                          {(fichaPersona.asistenciaCount || 0) > 0 && (
+                            <span className="ficha-tab-badge">{fichaPersona.asistenciaCount}</span>
+                          )}
                         </button>
                         <button
                           type="button"
@@ -1007,6 +1185,9 @@ export default function EncuestasSocialesPage() {
                         >
                           <span className="ficha-tab-icon">📄</span>
                           Documentos
+                          {(fichaPersona.documentoCount || 0) > 0 && (
+                            <span className="ficha-tab-badge">{fichaPersona.documentoCount}</span>
+                          )}
                         </button>
                         <button
                           type="button"
@@ -1140,21 +1321,184 @@ export default function EncuestasSocialesPage() {
                           </section>
                         )}
                         {fichaRightTab === 'asistencias' && (
-                          <section className="ficha-section ficha-grupo-section">
-                            <h4>Asistencias</h4>
-                            <p className="ficha-grupo-empty">Próximamente. Módulo en desarrollo.</p>
+                          <section className="ficha-section ficha-asistencias-section">
+                            <div className="ficha-grupo-header">
+                              <h4>Asistencias </h4>
+                              {fichaPersona.esTitular !== false && (
+                                <button type="button" className="ficha-btn-add" onClick={() => setAgregarAsistenciaOpen(true)}>
+                                  + Nueva asistencia
+                                </button>
+                              )}
+                            </div>
+                            {fichaPersona.esTitular === false ? (
+                              <p className="ficha-grupo-empty">Las asistencias se gestionan desde la ficha del titular.</p>
+                            ) : fichaAsistenciasLoading ? (
+                              <p className="ficha-grupo-empty">Cargando...</p>
+                            ) : !fichaAsistencias.length ? (
+                              <p className="ficha-grupo-empty">No hay asistencias registradas.</p>
+                            ) : (
+                              <ul className="ficha-asistencias-list">
+                                {fichaAsistencias.map((a) => (
+                                  <li key={a.id} className="ficha-asistencia-card">
+                                    <div className="ficha-asistencia-info">
+                                      <span className="ficha-asistencia-fecha">
+                                        {a.createdAt ? new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
+                                      </span>
+                                      {Object.entries(a.camposDinamicos || {}).map(([k, v]) => (
+                                        v != null && v !== '' && <span key={k} className="ficha-asistencia-campo">{k}: {String(v)}</span>
+                                      ))}
+                                    </div>
+                                    {isDsAdmin && (
+                                      <button
+                                        type="button"
+                                        className="ficha-grupo-btn ficha-grupo-btn-desvincular"
+                                        onClick={() => eliminarAsistencia(a)}
+                                        disabled={fichaAsistenciaDeleting === a.id}
+                                        title="Eliminar"
+                                      >
+                                        {fichaAsistenciaDeleting === a.id ? '...' : 'Eliminar'}
+                                      </button>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </section>
                         )}
                         {fichaRightTab === 'documentos' && (
-                          <section className="ficha-section ficha-grupo-section">
-                            <h4>Documentos</h4>
-                            <p className="ficha-grupo-empty">Próximamente. Módulo en desarrollo.</p>
+                          <section className="ficha-section ficha-documentos-section">
+                            <div className="ficha-grupo-header">
+                              <h4>Documentos adjuntos</h4>
+                            </div>
+                            {fichaPersona.esTitular !== false ? (
+                              <>
+                                <div className="ficha-doc-upload-card">
+                                  <label htmlFor="ficha-doc-file" className="ficha-doc-dropzone">
+                                    <span className="ficha-doc-dropzone-icon">📄</span>
+                                    <span className="ficha-doc-dropzone-text">
+                                      {docUploadForm.archivo ? docUploadForm.archivo.name : 'Seleccionar archivo'}
+                                    </span>
+                                  </label>
+                                  <input
+                                    ref={docFileInputRef}
+                                    type="file"
+                                    id="ficha-doc-file"
+                                    className="ficha-doc-file-input"
+                                    onChange={(e) => setDocUploadForm((d) => ({ ...d, archivo: e.target.files?.[0] || null }))}
+                                  />
+                                  <input
+                                    type="text"
+                                    className="ficha-doc-desc-input"
+                                    placeholder="Descripción (ej: DNI frente, constancia de domicilio...)"
+                                    value={docUploadForm.descripcion}
+                                    onChange={(e) => setDocUploadForm((d) => ({ ...d, descripcion: e.target.value }))}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="ficha-doc-upload-btn"
+                                    onClick={subirDocumento}
+                                    disabled={!docUploadForm.archivo || fichaDocumentoUploading}
+                                  >
+                                    {fichaDocumentoUploading ? 'Subiendo...' : 'Subir documento'}
+                                  </button>
+                                </div>
+                                {fichaDocumentosLoading ? (
+                                  <p className="ficha-grupo-empty">Cargando documentos...</p>
+                                ) : !fichaDocumentos.length ? (
+                                  <p className="ficha-grupo-empty">No hay documentos adjuntos.</p>
+                                ) : (
+                                  <>
+                                    <div className="ficha-doc-list-header">
+                                      <span>Documentos adjuntos</span>
+                                      <span className="ficha-doc-count">{fichaDocumentos.length}</span>
+                                    </div>
+                                    <ul className="ficha-doc-list">
+                                    {fichaDocumentos.map((doc) => (
+                                      <li key={doc.id} className="ficha-doc-item">
+                                        <div className="ficha-doc-item-icon">
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                            <line x1="16" y1="13" x2="8" y2="13" />
+                                            <line x1="16" y1="17" x2="8" y2="17" />
+                                            <polyline points="10 9 9 9 8 9" />
+                                          </svg>
+                                        </div>
+                                        <div className="ficha-doc-item-info">
+                                          <span className="ficha-doc-item-nombre">{doc.nombreOriginal}</span>
+                                          {doc.descripcion && (
+                                            <span className="ficha-doc-item-desc">{doc.descripcion}</span>
+                                          )}
+                                          <span className="ficha-doc-item-fecha">
+                                            {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                                          </span>
+                                        </div>
+                                        <div className="ficha-doc-item-acciones">
+                                          <button
+                                            type="button"
+                                            className="ficha-doc-accion-icon"
+                                            onClick={() => descargarDocumento(doc)}
+                                            title="Descargar"
+                                          >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                              <polyline points="7 10 12 15 17 10" />
+                                              <line x1="12" y1="15" x2="12" y2="3" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="ficha-doc-accion-icon"
+                                            onClick={() => abrirDocumento(doc)}
+                                            title="Abrir en nueva pestaña"
+                                          >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                              <polyline points="15 3 21 3 21 9" />
+                                              <line x1="10" y1="14" x2="21" y2="3" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="ficha-doc-accion-icon ficha-doc-accion-icon--delete"
+                                            onClick={() => eliminarDocumento(doc)}
+                                            disabled={fichaDocumentoDeleting === doc.id}
+                                            title="Eliminar"
+                                          >
+                                            {fichaDocumentoDeleting === doc.id ? (
+                                              <span className="ficha-doc-accion-loading">...</span>
+                                            ) : (
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                <line x1="10" y1="11" x2="10" y2="17" />
+                                                <line x1="14" y1="11" x2="14" y2="17" />
+                                              </svg>
+                                            )}
+                                          </button>
+                                        </div>
+                                      </li>
+                                    ))}
+                                    </ul>
+                                  </>
+                                )}
+                              </>
+                            ) : (
+                              <p className="ficha-grupo-empty">Los documentos se gestionan desde la ficha del titular.</p>
+                            )}
                           </section>
                         )}
                         {fichaRightTab === 'observaciones' && (
                           <section className="ficha-section ficha-grupo-section">
-                            <h4>Observaciones</h4>
-                            <p className="ficha-grupo-empty">Próximamente. Módulo en desarrollo.</p>
+                            <h4>Observaciones / comentarios</h4>
+                            <p className="ficha-observaciones-hint">Comentarios sobre la persona. No aparecen en la encuesta.</p>
+                            <textarea
+                              className="ficha-observaciones-textarea"
+                              placeholder="Escribí aquí observaciones, notas o comentarios sobre esta persona..."
+                              value={fichaEditData?.observaciones ?? ''}
+                              onChange={(e) => setFichaEditData((d) => d ? { ...d, observaciones: e.target.value } : d)}
+                              rows={8}
+                            />
                           </section>
                         )}
                       </div>
@@ -1385,6 +1729,48 @@ export default function EncuestasSocialesPage() {
                     </ul>
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {agregarAsistenciaOpen && fichaPersona && (
+          <div className="admin-modal-overlay" onClick={() => setAgregarAsistenciaOpen(false)}>
+            <div className="admin-modal admin-modal--narrow ficha-grupo-edit-modal" onClick={(e) => e.stopPropagation()} role="dialog">
+              <header className="admin-modal-header">
+                <h2>Nueva asistencia</h2>
+                <button type="button" className="admin-modal-close" onClick={() => setAgregarAsistenciaOpen(false)} aria-label="Cerrar">×</button>
+              </header>
+              <div className="admin-modal-form">
+                <p className="ficha-asistencia-hint">Registrá una entrega a esta persona (comida, cheque, subsidio, etc.).</p>
+                {camposAsistencia.length > 0 ? (
+                  <section className="admin-form-section">
+                    <div className="ficha-campos-grid">
+                      {camposAsistencia.map((c) => (
+                        <div key={c.id} className="ficha-campo">
+                          <label>{c.nombre} {c.required && '*'}</label>
+                          {renderCampoInput(c, agregarAsistenciaForm.camposDinamicos?.[c.slug], (v) => setAgregarAsistenciaForm((d) => ({
+                            ...d,
+                            camposDinamicos: { ...(d.camposDinamicos || {}), [c.slug]: v },
+                          })))}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : (
+                  <p className="ficha-grupo-empty">No hay campos configurados. Agregá campos en Configuración → Campos dinámicos (entidad Asistencias).</p>
+                )}
+                <footer className="admin-modal-footer" style={{ marginTop: '1rem' }}>
+                  <button type="button" className="admin-btn-ghost" onClick={() => setAgregarAsistenciaOpen(false)}>Cancelar</button>
+                  <button
+                    type="button"
+                    className="admin-btn-primary"
+                    onClick={crearAsistencia}
+                    disabled={fichaAsistenciaSaving}
+                  >
+                    {fichaAsistenciaSaving ? 'Guardando...' : 'Registrar asistencia'}
+                  </button>
+                </footer>
               </div>
             </div>
           </div>

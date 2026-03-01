@@ -44,6 +44,13 @@ export async function apiRequest(endpoint, options = {}) {
   return data;
 }
 
+export const assistantApi = {
+  chat: (message, history = []) => apiRequest('/assistant/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, history }),
+  }),
+};
+
 export const authApi = {
   requestOtp: (dni) => apiRequest('/auth/request-otp', {
     method: 'POST',
@@ -172,6 +179,58 @@ export const dsApi = {
   },
   personas: {
     update: (id, data) => apiRequest(`/ds/personas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    documentos: {
+      list: (personaId) => apiRequest(`/ds/personas/${personaId}/documentos`),
+      upload: async (personaId, formData) => {
+        const token = getToken();
+        const headers = { Accept: 'application/json' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}/ds/personas/${personaId}/documentos`, {
+          method: 'POST',
+          body: formData,
+          headers,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('systems');
+          window.location.href = '/login';
+          throw new Error('Sesión expirada');
+        }
+        if (!res.ok) throw new Error(data.message || data.errors?.archivo?.[0] || 'Error al subir');
+        return data;
+      },
+      getDownloadUrl: (personaId, docId, disposition = 'attachment') =>
+        `${API_BASE}/ds/personas/${personaId}/documentos/${docId}/download?disposition=${disposition}`,
+      download: async (personaId, docId, filename, disposition = 'attachment') => {
+        const token = getToken();
+        const url = `${API_BASE}/ds/personas/${personaId}/documentos/${docId}/download?disposition=${disposition}`;
+        const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (!res.ok) throw new Error('Error al descargar');
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        if (disposition === 'attachment') {
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename || 'documento';
+          a.click();
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          window.open(blobUrl, '_blank');
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        }
+      },
+      delete: (personaId, docId) =>
+        apiRequest(`/ds/personas/${personaId}/documentos/${docId}`, { method: 'DELETE' }),
+    },
+    asistencias: {
+      list: (personaId) => apiRequest(`/ds/personas/${personaId}/asistencias`),
+      create: (personaId, data) =>
+        apiRequest(`/ds/personas/${personaId}/asistencias`, { method: 'POST', body: JSON.stringify(data) }),
+      delete: (personaId, asistenciaId) =>
+        apiRequest(`/ds/personas/${personaId}/asistencias/${asistenciaId}`, { method: 'DELETE' }),
+    },
   },
   calles: {
     list: (params = {}) => {
@@ -269,6 +328,44 @@ export const dsApi = {
     },
     create: (data) => apiRequest('/ds/ciudades', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => apiRequest(`/ds/ciudades/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  },
+  estadisticas: {
+    resumen: (params = {}) => {
+      const sp = new URLSearchParams(params).toString();
+      return apiRequest(`/ds/estadisticas/resumen${sp ? `?${sp}` : ''}`);
+    },
+    serieTemporal: (params = {}) => {
+      const sp = new URLSearchParams(params).toString();
+      return apiRequest(`/ds/estadisticas/serie-temporal${sp ? `?${sp}` : ''}`);
+    },
+    serieTemporalPorTipoAsistencia: (params = {}) => {
+      const sp = new URLSearchParams(params).toString();
+      return apiRequest(`/ds/estadisticas/serie-temporal-por-tipo-asistencia${sp ? `?${sp}` : ''}`);
+    },
+    campos: (appliesTo) => {
+      const sp = appliesTo ? `?applies_to=${encodeURIComponent(appliesTo)}` : '';
+      return apiRequest(`/ds/estadisticas/campos${sp}`);
+    },
+    agregado: (params) => {
+      const sp = new URLSearchParams(params).toString();
+      return apiRequest(`/ds/estadisticas/agregado?${sp}`);
+    },
+    cruce: (params) => {
+      const p = { ...params };
+      if (Array.isArray(p.campos_multi)) {
+        p.campos_multi = JSON.stringify(p.campos_multi);
+      }
+      const sp = new URLSearchParams(p).toString();
+      return apiRequest(`/ds/estadisticas/cruce?${sp}`);
+    },
+    mapa: (params = {}) => {
+      const sp = new URLSearchParams(params).toString();
+      return apiRequest(`/ds/estadisticas/mapa${sp ? `?${sp}` : ''}`);
+    },
+    agregadoPorBarrio: (params = {}) => {
+      const sp = new URLSearchParams(params).toString();
+      return apiRequest(`/ds/estadisticas/agregado-por-barrio${sp ? `?${sp}` : ''}`);
+    },
   },
 };
 

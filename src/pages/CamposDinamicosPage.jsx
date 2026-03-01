@@ -31,6 +31,7 @@ const ENTIDADES = [
   { id: 'titular', label: 'Titulares' },
   { id: 'grupo', label: 'Grupo familiar' },
   { id: 'encuesta_social', label: 'Encuestas Sociales' },
+  { id: 'asistencia', label: 'Asistencias' },
 ];
 
 const initialFormData = {

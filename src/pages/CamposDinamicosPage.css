@@ -27,9 +27,8 @@
 }
 
 .campos-dinamicos-col {
-  flex: 1;
+  flex: 0 0 calc(50% - 0.75rem);
   min-width: 280px;
-  max-width: 50%;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -316,6 +315,6 @@
 
 @media (max-width: 900px) {
   .campos-dinamicos-col {
-    max-width: 100%;
+    flex: 1 1 100%;
   }
 }
