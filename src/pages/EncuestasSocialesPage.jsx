@@ -976,7 +976,7 @@ export default function EncuestasSocialesPage() {
                           onClick={() => setFichaRightTab('grupo')}
                         >
                           <span className="ficha-tab-icon">👥</span>
-                          Grupo Familiar
+                          Grupo 
                           {fichaPersona.grupoFamiliar?.length > 0 && (
                             <span className="ficha-tab-badge">{fichaPersona.grupoFamiliar.length}</span>
                           )}
@@ -1014,7 +1014,7 @@ export default function EncuestasSocialesPage() {
                           onClick={() => setFichaRightTab('observaciones')}
                         >
                           <span className="ficha-tab-icon">💬</span>
-                          Observaciones
+                          Obs.
                         </button>
                       </div>
                       <div className="ficha-tab-panel">
@@ -1445,7 +1445,7 @@ export default function EncuestasSocialesPage() {
                       )}
                     </section>
                     <section className="admin-form-section">
-                      <h3>Grupo familiar</h3>
+                      <h3>Grupo</h3>
                       {!formData.titularDisplay ? (
                         <p className="encuesta-grupo-hint">Seleccioná un titular para ver el grupo.</p>
                       ) : !formData.grupoFamiliar?.length ? (
