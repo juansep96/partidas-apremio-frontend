@@ -6,11 +6,19 @@ import './AssistantBot.css';
 
 const STORAGE_KEY = 'sigemi-assistant-bubble-open';
 const STORAGE_MESSAGES = 'sigemi-assistant-messages';
+const STORAGE_FIRST_VISIT = 'sigemi-assistant-first-visit';
 const MAX_HISTORY = 20;
 
 export default function AssistantBot() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [showWelcomeBubble, setShowWelcomeBubble] = useState(() => {
+    try {
+      return !localStorage.getItem(STORAGE_FIRST_VISIT);
+    } catch {
+      return false;
+    }
+  });
   const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState(() => {
     try {
@@ -39,6 +47,23 @@ export default function AssistantBot() {
   useEffect(() => {
     if (expanded) inputRef.current?.focus();
   }, [expanded]);
+
+  useEffect(() => {
+    if (!showWelcomeBubble) {
+      try {
+        localStorage.setItem(STORAGE_FIRST_VISIT, '1');
+      } catch (_) {}
+    }
+  }, [showWelcomeBubble]);
+
+  const openChatAndDismissBubble = () => {
+    setShowWelcomeBubble(false);
+    setExpanded(true);
+  };
+
+  const dismissBubble = () => {
+    setShowWelcomeBubble(false);
+  };
 
   const labelNavegar = (ruta) => {
     const labels = {
@@ -217,10 +242,34 @@ export default function AssistantBot() {
         </div>
       )}
 
+      {showWelcomeBubble && !expanded && (
+        <div className="assistant-bubble">
+          <button
+            type="button"
+            className="assistant-bubble-close"
+            onClick={dismissBubble}
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+          <p className="assistant-bubble-message">
+            <strong>¡Bienvenido/a!</strong> Soy {botName}, tu asistente. Hacé clic abajo para empezar a chatear.
+          </p>
+          <button
+            type="button"
+            className="assistant-btn-accion"
+            onClick={openChatAndDismissBubble}
+            style={{ marginTop: '0.5rem' }}
+          >
+            Abrir chat
+          </button>
+        </div>
+      )}
+
       <button
         type="button"
         className="assistant-bot-trigger"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => showWelcomeBubble ? openChatAndDismissBubble() : setExpanded((v) => !v)}
         aria-label={expanded ? 'Cerrar asistente' : 'Abrir asistente'}
         aria-expanded={expanded}
       >
