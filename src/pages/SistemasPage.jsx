@@ -8,7 +8,9 @@ export default function SistemasPage() {
   const navigate = useNavigate();
 
   const handleSelectSystem = (system) => {
-    if (system.modules?.length === 1) {
+    if (system.enabled === false) return;
+    const hasSingleModule = system.modules?.length === 1 && system.modules[0]?.enabled !== false;
+    if (hasSingleModule) {
       navigate(system.modules[0].route);
     } else {
       navigate(`/sistema/${system.id}`);
@@ -27,9 +29,13 @@ export default function SistemasPage() {
           {systems?.map((system) => (
             <button
               key={system.id}
-              className="sistema-card"
+              className={`sistema-card ${system.enabled === false ? 'sistema-card-disabled' : ''}`}
               onClick={() => handleSelectSystem(system)}
+              disabled={system.enabled === false}
             >
+              {system.enabled === false && (
+                <span className="sistema-badge-proximamente">Próximamente</span>
+              )}
               <div className="sistema-card-logo">
                 {system.logo ? (
                   <img src={system.logo} alt={system.name} />
@@ -41,7 +47,9 @@ export default function SistemasPage() {
                 <h3>{system.name}</h3>
                 {system.description && <p>{system.description}</p>}
               </div>
-              <span className="sistema-card-arrow" aria-hidden>→</span>
+              {system.enabled !== false && (
+                <span className="sistema-card-arrow" aria-hidden>→</span>
+              )}
             </button>
           ))}
         </div>

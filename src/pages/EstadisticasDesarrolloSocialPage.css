@@ -1,0 +1,40 @@
+.estadisticas-ds-page {
+  max-width: 900px;
+}
+
+.estadisticas-ds-header {
+  margin-bottom: 1.5rem;
+}
+
+.estadisticas-ds-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+}
+
+.estadisticas-ds-header p {
+  font-size: 0.9375rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.estadisticas-ds-content {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  padding: 3rem;
+}
+
+.estadisticas-ds-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #94a3b8;
+}
+
+.estadisticas-ds-icon {
+  font-size: 2.5rem;
+}

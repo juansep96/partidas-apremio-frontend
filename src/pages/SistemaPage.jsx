@@ -11,8 +11,9 @@ export default function SistemaPage() {
   const system = systems?.find((s) => s.id === id);
   const modules = system?.modules || [];
 
-  const handleSelectModule = (module) => {
-    navigate(module.route);
+  const handleSelectModule = (mod) => {
+    if (mod.enabled === false) return;
+    navigate(mod.route);
   };
 
   if (!system) {
@@ -38,9 +39,13 @@ export default function SistemaPage() {
           {modules.map((mod) => (
             <button
               key={mod.id}
-              className="modulo-card"
+              className={`modulo-card ${mod.enabled === false ? 'modulo-card-disabled' : ''}`}
               onClick={() => handleSelectModule(mod)}
+              disabled={mod.enabled === false}
             >
+              {mod.enabled === false && (
+                <span className="modulo-badge-proximamente">Próximamente</span>
+              )}
               <div className="modulo-icon">
                 {mod.logo ? (
                   <img src={mod.logo} alt="" />

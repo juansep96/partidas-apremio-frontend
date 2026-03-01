@@ -1,0 +1,538 @@
+/* ========== Wizard Nueva Encuesta - Diseño moderno ========== */
+.nueva-encuesta-wizard {
+  --wizard-accent: #0891b2;
+  --wizard-accent-hover: #0e7490;
+  --wizard-bg: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 50%, #f0f9ff 100%);
+  --wizard-card: rgba(255, 255, 255, 0.95);
+  --wizard-shadow: 0 4px 24px rgba(8, 145, 178, 0.08);
+  --wizard-radius: 1rem;
+  --wizard-radius-lg: 1.25rem;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  background: var(--wizard-bg);
+  min-height: 60vh;
+}
+
+.nueva-encuesta-wizard .wizard-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.nueva-encuesta-wizard .wizard-hero-back {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-hero-back:hover {
+  background: #f8fafc;
+  color: #0891b2;
+  border-color: #a5f3fc;
+}
+
+.nueva-encuesta-wizard .wizard-hero-text h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.nueva-encuesta-wizard .wizard-hero-text p {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Progress steps - estilo horizontal moderno */
+.nueva-encuesta-wizard .wizard-steps {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 2rem;
+  background: var(--wizard-card);
+  border-radius: var(--wizard-radius);
+  padding: 0.5rem;
+  box-shadow: var(--wizard-shadow);
+  border: 1px solid rgba(8, 145, 178, 0.12);
+}
+
+.nueva-encuesta-wizard .wizard-step-indicator {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.625rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.nueva-encuesta-wizard .wizard-step-indicator:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 60%;
+  background: #e2e8f0;
+  opacity: 0.5;
+}
+
+.nueva-encuesta-wizard .wizard-step-indicator.wizard-step-active {
+  background: linear-gradient(135deg, var(--wizard-accent) 0%, #06b6d4 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.35);
+}
+
+.nueva-encuesta-wizard .wizard-step-indicator.wizard-step-active::after {
+  display: none;
+}
+
+.nueva-encuesta-wizard .wizard-step-indicator.wizard-step-done {
+  color: var(--wizard-accent);
+  background: rgba(8, 145, 178, 0.08);
+}
+
+.nueva-encuesta-wizard .wizard-step-num {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.nueva-encuesta-wizard .wizard-step-active .wizard-step-num {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.nueva-encuesta-wizard .wizard-step-done .wizard-step-num {
+  background: var(--wizard-accent);
+  color: white;
+}
+
+/* Panel principal */
+.nueva-encuesta-wizard .wizard-content {
+  background: var(--wizard-card);
+  border-radius: var(--wizard-radius-lg);
+  padding: 2rem;
+  box-shadow: var(--wizard-shadow);
+  border: 1px solid rgba(8, 145, 178, 0.12);
+  min-height: 320px;
+}
+
+.nueva-encuesta-wizard .wizard-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nueva-encuesta-wizard .wizard-panel h2::before {
+  content: '';
+  width: 4px;
+  height: 1.25em;
+  background: linear-gradient(180deg, var(--wizard-accent), #06b6d4);
+  border-radius: 2px;
+  align-self: center;
+}
+
+.nueva-encuesta-wizard .wizard-hint {
+  color: #64748b;
+  margin: 0 0 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* Búsqueda DNI - destacada */
+.nueva-encuesta-wizard .wizard-search-box {
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: var(--wizard-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-search-box:focus-within {
+  border-color: var(--wizard-accent);
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.15);
+}
+
+.nueva-encuesta-wizard .wizard-search-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.nueva-encuesta-wizard .wizard-search-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.875rem 1.25rem;
+  font-size: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-search-row input:focus {
+  outline: none;
+  border-color: var(--wizard-accent);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12);
+}
+
+.nueva-encuesta-wizard .wizard-search-btn {
+  padding: 0.875rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--wizard-accent) 0%, #06b6d4 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+.nueva-encuesta-wizard .wizard-search-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
+}
+
+.nueva-encuesta-wizard .wizard-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alerta IR AL TITULAR */
+.nueva-encuesta-wizard .wizard-alert {
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--wizard-radius);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.nueva-encuesta-wizard .wizard-alert-info {
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  border: 1px solid #a5f3fc;
+  color: #0e7490;
+}
+
+.nueva-encuesta-wizard .wizard-alert p {
+  flex: 1;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.nueva-encuesta-wizard .wizard-alert .wizard-alert-btn {
+  flex-shrink: 0;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--wizard-accent);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-alert .wizard-alert-btn:hover {
+  background: var(--wizard-accent-hover);
+}
+
+/* Formulario persona */
+.nueva-encuesta-wizard .wizard-form-persona {
+  background: #f8fafc;
+  border-radius: var(--wizard-radius);
+  padding: 1.5rem;
+  margin-top: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.nueva-encuesta-wizard .wizard-form-persona h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.nueva-encuesta-wizard .wizard-form-persona h4 {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.nueva-encuesta-wizard .wizard-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.nueva-encuesta-wizard .wizard-field label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.nueva-encuesta-wizard .wizard-field input,
+.nueva-encuesta-wizard .wizard-field select,
+.nueva-encuesta-wizard .wizard-field textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-field input:focus,
+.nueva-encuesta-wizard .wizard-field select:focus {
+  outline: none;
+  border-color: var(--wizard-accent);
+}
+
+/* Grupo familiar - cards */
+.nueva-encuesta-wizard .wizard-grupo-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nueva-encuesta-wizard .wizard-grupo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: white;
+  border-radius: 0.625rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-grupo-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.nueva-encuesta-wizard .wizard-grupo-item-titular {
+  border-left: 4px solid var(--wizard-accent);
+  background: linear-gradient(90deg, rgba(8, 145, 178, 0.04) 0%, white 100%);
+}
+
+.nueva-encuesta-wizard .wizard-grupo-item span {
+  font-size: 0.9375rem;
+  color: #334155;
+}
+
+.nueva-encuesta-wizard .wizard-grupo-item strong {
+  color: #0f172a;
+}
+
+.nueva-encuesta-wizard .wizard-grupo-quitar {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+  background: white;
+  color: #dc2626;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-grupo-quitar:hover {
+  background: #fef2f2;
+}
+
+.nueva-encuesta-wizard .wizard-agregar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px dashed #a5f3fc;
+  border-radius: 0.625rem;
+  background: rgba(8, 145, 178, 0.05);
+  color: var(--wizard-accent);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-agregar-btn:hover {
+  border-color: var(--wizard-accent);
+  background: rgba(8, 145, 178, 0.1);
+}
+
+/* Footer botones */
+.nueva-encuesta-wizard .wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.nueva-encuesta-wizard .wizard-footer .wizard-btn-ghost {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-footer .wizard-btn-ghost:hover {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.nueva-encuesta-wizard .wizard-footer .wizard-btn-primary {
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--wizard-accent) 0%, #06b6d4 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+.nueva-encuesta-wizard .wizard-footer .wizard-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
+}
+
+.nueva-encuesta-wizard .wizard-footer .wizard-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Éxito - pantalla final */
+.nueva-encuesta-wizard .wizard-post-guardado {
+  text-align: center;
+  padding: 2rem 1rem !important;
+}
+
+.nueva-encuesta-wizard .wizard-post-guardado h2 {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.nueva-encuesta-wizard .wizard-post-guardado h2::before {
+  display: none;
+}
+
+.nueva-encuesta-wizard .wizard-success-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+}
+
+.nueva-encuesta-wizard .wizard-actions-post {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.nueva-encuesta-wizard .wizard-actions-post .wizard-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nueva-encuesta-wizard .wizard-actions-post .wizard-action-btn-primary {
+  background: linear-gradient(135deg, var(--wizard-accent) 0%, #06b6d4 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+.nueva-encuesta-wizard .wizard-actions-post .wizard-action-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
+}
+
+.nueva-encuesta-wizard .wizard-actions-post .wizard-action-btn-ghost {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.nueva-encuesta-wizard .wizard-actions-post .wizard-action-btn-ghost:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* Empty state campos */
+.nueva-encuesta-wizard .wizard-empty-hint {
+  padding: 2rem;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: var(--wizard-radius);
+  color: #64748b;
+  font-size: 0.9375rem;
+}

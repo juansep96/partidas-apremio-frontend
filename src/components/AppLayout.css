@@ -77,6 +77,13 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
+.app-nav-link-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  user-select: none;
+}
+
 .app-config-menu-wrap {
   position: relative;
 }

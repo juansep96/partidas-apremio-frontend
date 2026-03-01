@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AppLayout from '../components/AppLayout';
+import SelectSearchable from '../components/SelectSearchable';
 import { usersApi, empleadosApi } from '../api/client';
 import { sileo } from 'sileo';
 import './AdminUsuariosPage.css';
@@ -333,38 +334,40 @@ export default function AdminUsuariosPage() {
              
               <div className="admin-filter-field">
                 <label>Sistema</label>
-                <select
+                <SelectSearchable
+                  options={[
+                    { value: '', label: 'Todos' },
+                    ...systems.map((s) => ({ value: s.id, label: s.name })),
+                  ]}
                   value={filters.systemId}
-                  onChange={(e) => setFilters((f) => ({ ...f, systemId: e.target.value }))}
-                >
-                  <option value="">Todos</option>
-                  {systems.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFilters((f) => ({ ...f, systemId: v }))}
+                  placeholder="Buscar sistema..."
+                />
               </div>
               <div className="admin-filter-field">
                 <label>Módulo</label>
-                <select
+                <SelectSearchable
+                  options={[
+                    { value: '', label: 'Todos' },
+                    ...allModules.map((m) => ({ value: m.id, label: `${m.systemName} › ${m.name}` })),
+                  ]}
                   value={filters.moduleId}
-                  onChange={(e) => setFilters((f) => ({ ...f, moduleId: e.target.value }))}
-                >
-                  <option value="">Todos</option>
-                  {allModules.map((m) => (
-                    <option key={m.id} value={m.id}>{m.systemName} › {m.name}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFilters((f) => ({ ...f, moduleId: v }))}
+                  placeholder="Buscar módulo..."
+                />
               </div>
               <div className="admin-filter-field">
                 <label>Rol</label>
-                <select
+                <SelectSearchable
+                  options={[
+                    { value: '', label: 'Cualquiera' },
+                    { value: 'SUPERADMIN', label: 'Superadmin' },
+                    { value: 'USER', label: 'Usuario' },
+                  ]}
                   value={filters.globalRole}
-                  onChange={(e) => setFilters((f) => ({ ...f, globalRole: e.target.value }))}
-                >
-                  <option value="">Cualquiera</option>
-                  <option value="SUPERADMIN">Superadmin</option>
-                  <option value="USER">Usuario</option>
-                </select>
+                  onChange={(v) => setFilters((f) => ({ ...f, globalRole: v }))}
+                  placeholder="Buscar rol..."
+                />
               </div>
             </div>
           </div>
@@ -651,20 +654,25 @@ export default function AdminUsuariosPage() {
                         const hasModules = sys?.modules?.length > 0;
                         return (
                           <div key={idx} className="admin-system-row admin-system-row-extended">
-                            <select
+                            <SelectSearchable
+                              options={[
+                                { value: '', label: 'Elegir sistema' },
+                                ...systems.map((s) => ({ value: s.id, label: s.name })),
+                              ]}
                               value={sr.systemId}
-                              onChange={(e) => updateSystemRole(idx, 'systemId', e.target.value)}
+                              onChange={(v) => updateSystemRole(idx, 'systemId', v)}
                               required={!formData.globalRole}
-                            >
-                              <option value="">Elegir sistema</option>
-                              {systems.map((s) => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                              ))}
-                            </select>
-                            <select value={sr.role} onChange={(e) => updateSystemRole(idx, 'role', e.target.value)}>
-                              <option value="USER">Usuario</option>
-                              <option value="ADMIN">Administrador</option>
-                            </select>
+                              placeholder="Buscar sistema..."
+                            />
+                            <SelectSearchable
+                              options={[
+                                { value: 'USER', label: 'Usuario' },
+                                { value: 'ADMIN', label: 'Administrador' },
+                              ]}
+                              value={sr.role}
+                              onChange={(v) => updateSystemRole(idx, 'role', v)}
+                              placeholder="Rol"
+                            />
                             {hasModules && (
                               <div className="admin-module-checkboxes">
                                 {(sys.modules || []).map((m) => (
@@ -832,20 +840,25 @@ export default function AdminUsuariosPage() {
                       const hasModules = sys?.modules?.length > 0;
                       return (
                         <div key={idx} className="admin-system-row admin-system-row-extended">
-                          <select
+                          <SelectSearchable
+                            options={[
+                              { value: '', label: 'Elegir sistema' },
+                              ...systems.map((s) => ({ value: s.id, label: s.name })),
+                            ]}
                             value={sr.systemId}
-                            onChange={(e) => updateSystemRole(idx, 'systemId', e.target.value)}
+                            onChange={(v) => updateSystemRole(idx, 'systemId', v)}
                             required={!formData.globalRole}
-                          >
-                            <option value="">Elegir sistema</option>
-                            {systems.map((s) => (
-                              <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                          </select>
-                          <select value={sr.role} onChange={(e) => updateSystemRole(idx, 'role', e.target.value)}>
-                            <option value="USER">Usuario</option>
-                            <option value="ADMIN">Administrador</option>
-                          </select>
+                            placeholder="Buscar sistema..."
+                          />
+                          <SelectSearchable
+                            options={[
+                              { value: 'USER', label: 'Usuario' },
+                              { value: 'ADMIN', label: 'Administrador' },
+                            ]}
+                            value={sr.role}
+                            onChange={(v) => updateSystemRole(idx, 'role', v)}
+                            placeholder="Rol"
+                          />
                           {hasModules && (
                             <div className="admin-module-checkboxes">
                               {(sys.modules || []).map((m) => (

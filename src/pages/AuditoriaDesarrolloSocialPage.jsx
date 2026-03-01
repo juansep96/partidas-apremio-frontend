@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AppLayout from '../components/AppLayout';
 import SelectSearchable from '../components/SelectSearchable';
-import { auditApi } from '../api/client';
+import { dsApi } from '../api/client';
 import { sileo } from 'sileo';
 import './AuditoriaPage.css';
 
-export default function AuditoriaPage() {
-  const { user } = useAuth();
+const DESARROLLO_SOCIAL_ROUTE = '/desarrollo-social';
+const DESARROLLO_SOCIAL_MODULE_ROUTE = '/desarrollo-social/encuestas';
+
+export default function AuditoriaDesarrolloSocialPage() {
+  const { user, systems } = useAuth();
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -22,8 +25,11 @@ export default function AuditoriaPage() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [deleting, setDeleting] = useState(null);
 
+  const desarrolloSocialSystem = systems?.find((s) => s.modules?.some((m) => m.route === DESARROLLO_SOCIAL_MODULE_ROUTE));
+  const isDsAdmin = user?.globalRole === 'SUPERADMIN' || desarrolloSocialSystem?.role === 'ADMIN';
+
   const loadLogs = useCallback(async () => {
-    if (!user || user.globalRole !== 'SUPERADMIN') return;
+    if (!isDsAdmin) return;
     setLoading(true);
     try {
       const params = { page, per_page: 20 };
@@ -31,7 +37,7 @@ export default function AuditoriaPage() {
       if (filterEntityType) params.entity_type = filterEntityType;
       if (filterDateFrom) params.date_from = filterDateFrom;
       if (filterDateTo) params.date_to = filterDateTo;
-      const res = await auditApi.list(params);
+      const res = await dsApi.audit.list(params);
       setLogs(res.data || []);
       setMeta(res.meta || { current_page: 1, last_page: 1, total: 0 });
       setFilters(res.filters || null);
@@ -40,16 +46,16 @@ export default function AuditoriaPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, page, filterAction, filterEntityType, filterDateFrom, filterDateTo]);
+  }, [isDsAdmin, page, filterAction, filterEntityType, filterDateFrom, filterDateTo]);
 
   useEffect(() => {
     if (!user) return;
-    if (user.globalRole !== 'SUPERADMIN') {
-      navigate('/sistemas', { replace: true });
+    if (!isDsAdmin) {
+      navigate(DESARROLLO_SOCIAL_ROUTE, { replace: true });
       return;
     }
     loadLogs();
-  }, [user, navigate, loadLogs]);
+  }, [user, isDsAdmin, navigate, loadLogs]);
 
   const applyFilters = () => {
     setPage(1);
@@ -66,7 +72,7 @@ export default function AuditoriaPage() {
 
   const openDetail = async (log) => {
     try {
-      const full = await auditApi.get(log.id);
+      const full = await dsApi.audit.get(log.id);
       setDetailLog(full);
     } catch (err) {
       sileo.error({ title: 'Error', description: err.message });
@@ -77,7 +83,7 @@ export default function AuditoriaPage() {
     if (!confirm('¿Eliminar este registro de auditoría?')) return;
     setDeleting(id);
     try {
-      await auditApi.delete(id);
+      await dsApi.audit.delete(id);
       sileo.success({ title: 'Registro eliminado' });
       setDetailLog(null);
       loadLogs();
@@ -102,14 +108,14 @@ export default function AuditoriaPage() {
 
   const userName = (u) => (u ? `${u.lastName || ''}, ${u.firstName || ''}`.replace(/^, |, $/g, '').trim() || u.dni || '-' : '-');
 
-  if (!user || user.globalRole !== 'SUPERADMIN') return null;
+  if (!user || !isDsAdmin) return null;
 
   return (
     <AppLayout>
       <div className="auditoria-page">
         <header className="auditoria-header">
           <h1>Auditoría</h1>
-          <p>Historial de acciones realizadas en el sistema</p>
+          <p>Historial de acciones realizadas en el módulo Desarrollo Social</p>
         </header>
 
         <section className="auditoria-filters">

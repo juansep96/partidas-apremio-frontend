@@ -1,0 +1,512 @@
+/* ========== Tabs de tipo de persona ========== */
+.personas-view-bar {
+  margin-bottom: 1.25rem;
+}
+
+.personas-tipo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: #f8fafc;
+  padding: 0.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.personas-tipo-tab {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.personas-tipo-tab:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.personas-tipo-tab--active {
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.personas-tipo-tab-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.personas-tipo-tab-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.personas-tipo-tab--active .personas-tipo-tab-desc {
+  color: #475569;
+}
+
+/* Cards de personas - compactas, sin avatar */
+.personas-cards .persona-card--compact {
+  cursor: pointer;
+}
+
+.personas-cards .persona-card--compact .persona-card-header-compact {
+  padding: 0.75rem 1rem;
+  gap: 0;
+}
+
+.personas-cards .persona-card--compact .persona-card-body-compact {
+  padding: 0 1rem 0.75rem;
+}
+
+.personas-cards .persona-card--compact .admin-user-card-meta strong {
+  font-size: 0.9375rem;
+}
+
+.personas-cards .persona-card--compact .admin-user-card-actions {
+  padding: 0.5rem 1rem;
+}
+
+.personas-cards .persona-card--titular {
+  border-left: 3px solid #015a6a;
+}
+
+.personas-cards .persona-card--grupo {
+  border-left: 3px solid #0ea5e9;
+}
+
+.personas-cards {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.persona-card-grupo-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #015a6a;
+  font-weight: 500;
+}
+
+.persona-tag-grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.persona-tag-grupo-icon {
+  opacity: 0.8;
+}
+
+/* Filtros expandibles/colapsables en Personas */
+.personas-filters-panel .personas-filters-header-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.personas-filters-panel:not(.personas-filters-expanded) .personas-filters-header-toggle {
+  border-bottom: none;
+}
+
+.personas-filters-chevron {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.personas-filters-panel .admin-filters-grid {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  animation: personasFiltersIn 0.2s ease-out;
+}
+
+@keyframes personasFiltersIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Select con filtrado (react-select) para calle */
+.persona-select-calle {
+  font-size: 0.9375rem;
+}
+
+.persona-select-calle .persona-select__control {
+  min-height: 2.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.persona-select-calle .persona-select__control--is-focused {
+  border-color: #015a6a;
+  box-shadow: 0 0 0 2px rgba(1, 90, 106, 0.2);
+}
+
+.persona-select-calle .persona-select__control:hover {
+  border-color: #cbd5e1;
+}
+
+.persona-select-calle .persona-select__input-container input {
+  font-size: 0.9375rem !important;
+}
+
+.persona-select-calle .persona-select__menu {
+  z-index: 10;
+}
+
+/* Modal Nueva Persona - Switch y buscador titular */
+.persona-tipo-section {
+  margin-top: 1rem;
+}
+
+.persona-tipo-switch {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.persona-tipo-option {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: all 0.2s;
+}
+
+.persona-tipo-option input {
+  display: none;
+}
+
+.persona-tipo-option:hover {
+  border-color: #cbd5e1;
+}
+
+.persona-tipo-active,
+.persona-tipo-option:has(input:checked) {
+  border-color: #015a6a;
+  background: rgba(1, 90, 106, 0.06);
+}
+
+.persona-tipo-label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #0f172a;
+}
+
+.persona-tipo-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.persona-titular-selector {
+  margin-top: 0.75rem;
+}
+
+.persona-titular-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.persona-titular-selected span {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.persona-titular-btn-change,
+.persona-titular-btn-clear {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.persona-titular-btn-change:hover,
+.persona-titular-btn-clear:hover {
+  background: #f1f5f9;
+}
+
+.persona-titular-btn-clear {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.persona-titular-btn-buscar {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.persona-titular-btn-buscar:hover {
+  border-color: #015a6a;
+  color: #015a6a;
+  background: rgba(1, 90, 106, 0.04);
+}
+
+/* Modal Buscar Titular - overlay con z-index mayor para quedar sobre "Nueva persona" */
+.persona-buscar-titular-overlay {
+  z-index: 400;
+}
+
+.persona-buscar-titular-modal {
+  max-width: 480px;
+}
+
+.persona-buscar-titular-body {
+  padding: 1rem 1.25rem;
+}
+
+.persona-buscar-titular-search {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.persona-buscar-titular-search input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+
+.persona-buscar-titular-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.persona-buscar-titular-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.persona-buscar-titular-item:last-child {
+  border-bottom: none;
+}
+
+.persona-buscar-titular-item:hover {
+  background: #f8fafc;
+}
+
+.persona-buscar-titular-item strong {
+  color: #0f172a;
+}
+
+.persona-buscar-titular-item span {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.persona-buscar-titular-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+/* Modal compacto para búsqueda DNI */
+.persona-dni-modal {
+  max-width: 360px;
+}
+
+.persona-dni-modal .admin-modal-header {
+  padding: 0.75rem 1rem;
+}
+
+.persona-dni-modal .admin-modal-header h2 {
+  font-size: 1rem;
+}
+
+/* Paso búsqueda DNI en nueva persona */
+.persona-dni-search-step {
+  padding: 1rem 1.25rem;
+}
+
+.persona-dni-search-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.persona-dni-search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.persona-dni-search-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+
+.persona-dni-search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #015a6a;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.persona-dni-search-btn:hover:not(:disabled) {
+  background: #027381;
+}
+
+.persona-dni-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.persona-dni-error-card {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
+.persona-dni-error-title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.persona-dni-error-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.persona-dni-error-fields div {
+  line-height: 1.4;
+}
+
+.persona-dni-error-titular {
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid #fecaca;
+}
+
+.persona-dni-error-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #b91c1c;
+  opacity: 0.9;
+}
+
+/* Grupo familiar - sección al editar titular */
+.persona-grupo-section {
+  margin-top: 1rem;
+}
+
+.persona-grupo-empty {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0 0 0.5rem 0;
+}
+
+.persona-grupo-list {
+  list-style: none;
+  margin: 0 0 0.75rem 0;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.persona-grupo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+}
+
+.persona-grupo-item:last-child {
+  border-bottom: none;
+}
+
+.persona-grupo-btn-desvincular {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 0.25rem;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.persona-grupo-btn-desvincular:hover:not(:disabled) {
+  background: #fef2f2;
+}

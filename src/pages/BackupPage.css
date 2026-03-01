@@ -1,0 +1,60 @@
+.backup-page {
+  min-height: 100%;
+  padding-bottom: 2rem;
+}
+
+.backup-header {
+  margin-bottom: 1.5rem;
+}
+
+.backup-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.backup-header p {
+  font-size: 0.9375rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.backup-card {
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  max-width: 560px;
+}
+
+.backup-card-body {
+  padding: 1.5rem;
+}
+
+.backup-description {
+  font-size: 0.9375rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+}
+
+.backup-btn {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  background: #015a6a;
+  color: white;
+  cursor: pointer;
+}
+
+.backup-btn:hover:not(:disabled) {
+  background: #014752;
+}
+
+.backup-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

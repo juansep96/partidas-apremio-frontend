@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AppLayout from '../components/AppLayout';
 import SelectSearchable from '../components/SelectSearchable';
-import { auditApi } from '../api/client';
+import { sistemaAuditApi } from '../api/client';
 import { sileo } from 'sileo';
 import './AuditoriaPage.css';
 
-export default function AuditoriaPage() {
-  const { user } = useAuth();
+export default function AuditoriaSistemaPage() {
+  const { id: systemId } = useParams();
+  const { user, systems } = useAuth();
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -22,10 +23,14 @@ export default function AuditoriaPage() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [deleting, setDeleting] = useState(null);
 
+  const sistemaSystem = systems?.find((s) => s.id === systemId);
+  const isSistemaAdmin = user?.globalRole === 'SUPERADMIN' || sistemaSystem?.role === 'ADMIN';
+
   const loadLogs = useCallback(async () => {
-    if (!user || user.globalRole !== 'SUPERADMIN') return;
+    if (!isSistemaAdmin || !systemId) return;
     setLoading(true);
     try {
+      const auditApi = sistemaAuditApi(systemId);
       const params = { page, per_page: 20 };
       if (filterAction) params.action = filterAction;
       if (filterEntityType) params.entity_type = filterEntityType;
@@ -40,16 +45,20 @@ export default function AuditoriaPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, page, filterAction, filterEntityType, filterDateFrom, filterDateTo]);
+  }, [isSistemaAdmin, systemId, page, filterAction, filterEntityType, filterDateFrom, filterDateTo]);
 
   useEffect(() => {
     if (!user) return;
-    if (user.globalRole !== 'SUPERADMIN') {
+    if (!systemId) {
       navigate('/sistemas', { replace: true });
       return;
     }
+    if (!isSistemaAdmin) {
+      navigate(`/sistema/${systemId}`, { replace: true });
+      return;
+    }
     loadLogs();
-  }, [user, navigate, loadLogs]);
+  }, [user, systemId, isSistemaAdmin, navigate, loadLogs]);
 
   const applyFilters = () => {
     setPage(1);
@@ -65,8 +74,9 @@ export default function AuditoriaPage() {
   };
 
   const openDetail = async (log) => {
+    if (!systemId) return;
     try {
-      const full = await auditApi.get(log.id);
+      const full = await sistemaAuditApi(systemId).get(log.id);
       setDetailLog(full);
     } catch (err) {
       sileo.error({ title: 'Error', description: err.message });
@@ -75,9 +85,10 @@ export default function AuditoriaPage() {
 
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar este registro de auditoría?')) return;
+    if (!systemId) return;
     setDeleting(id);
     try {
-      await auditApi.delete(id);
+      await sistemaAuditApi(systemId).delete(id);
       sileo.success({ title: 'Registro eliminado' });
       setDetailLog(null);
       loadLogs();
@@ -102,14 +113,14 @@ export default function AuditoriaPage() {
 
   const userName = (u) => (u ? `${u.lastName || ''}, ${u.firstName || ''}`.replace(/^, |, $/g, '').trim() || u.dni || '-' : '-');
 
-  if (!user || user.globalRole !== 'SUPERADMIN') return null;
+  if (!user || !isSistemaAdmin) return null;
 
   return (
     <AppLayout>
       <div className="auditoria-page">
         <header className="auditoria-header">
           <h1>Auditoría</h1>
-          <p>Historial de acciones realizadas en el sistema</p>
+          <p>Historial de acciones realizadas en el sistema y en todos sus módulos</p>
         </header>
 
         <section className="auditoria-filters">

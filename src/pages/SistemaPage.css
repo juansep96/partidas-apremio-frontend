@@ -37,6 +37,7 @@
 }
 
 .modulo-card {
+  position: relative;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
@@ -82,4 +83,28 @@
   color: #0f172a;
   margin: 0;
   text-align: center;
+}
+
+.modulo-card-disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.modulo-card-disabled:hover {
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+.modulo-badge-proximamente {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
 }
