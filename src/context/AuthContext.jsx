@@ -42,6 +42,8 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('systems');
+    localStorage.removeItem('SIDESO-assistant-messages');
+    sessionStorage.removeItem('SIDESO-assistant-welcomed-session');
     setUser(null);
     setSystems([]);
   };

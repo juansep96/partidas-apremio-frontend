@@ -40,29 +40,35 @@ export default function LoginPage() {
 
   const handleRequestOtp = async (e) => {
     e.preventDefault();
+    const dniClean = dni.replace(/\D/g, '');
     setLoading(true);
+
+    // UI optimista: mostramos el paso del código de inmediato para no bloquear esperando el envío del email
+    const req = authApi.requestOtp(dniClean);
+    setStep(2);
+    setLoading(false);
+
     try {
-      const res = await authApi.requestOtp(dni.replace(/\D/g, ''));
+      const res = await req;
       if (res.success) {
-        setStep(2);
         if (res.debug_code) setCode(res.debug_code);
         sileo.info({
           title: 'Código enviado',
           description: 'Revisá tu email o teléfono para el código de verificación.',
         });
       } else {
+        setStep(1);
         sileo.error({
           title: 'Error',
           description: res.message || 'No se pudo enviar el código.',
         });
       }
     } catch (err) {
+      setStep(1);
       sileo.error({
         title: 'Error de conexión',
         description: err.message || 'Intentá de nuevo más tarde.',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -157,7 +163,7 @@ export default function LoginPage() {
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="login-form">
-              <p className="otp-hint">Enviamos un código de 6 dígitos a tu email/teléfono registrado.</p>
+              <p className="otp-hint">Enviamos un código de 6 dígitos a tu email/teléfono. Puede tardar unos segundos en llegar.</p>
               <label className="login-field-label">Código recibido</label>
               <input
                 type="tel"

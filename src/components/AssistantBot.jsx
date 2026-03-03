@@ -4,30 +4,25 @@ import { useAuth } from '../context/AuthContext';
 import { assistantApi } from '../api/client';
 import './AssistantBot.css';
 
-const STORAGE_KEY = 'sigemi-assistant-bubble-open';
-const STORAGE_MESSAGES = 'sigemi-assistant-messages';
-const STORAGE_FIRST_VISIT = 'sigemi-assistant-first-visit';
+const STORAGE_WELCOMED_SESSION = 'SIDESO-assistant-welcomed-session';
 const MAX_HISTORY = 20;
 
+const RUTAS_PROHIBIDAS_USER = ['/desarrollo-social/estadisticas', '/desarrollo-social/auditoria', '/desarrollo-social/config'];
+
 export default function AssistantBot() {
-  const { user } = useAuth();
+  const { user, systems } = useAuth();
+  const desarrolloSocialSystem = systems?.find((s) => s.modules?.some((m) => m.route === '/desarrollo-social/encuestas'));
+  const isDsAdmin = user?.globalRole === 'SUPERADMIN' || desarrolloSocialSystem?.role === 'ADMIN';
   const navigate = useNavigate();
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(() => {
     try {
-      return !localStorage.getItem(STORAGE_FIRST_VISIT);
+      return !sessionStorage.getItem(STORAGE_WELCOMED_SESSION);
     } catch {
       return false;
     }
   });
   const [expanded, setExpanded] = useState(false);
-  const [messages, setMessages] = useState(() => {
-    try {
-      const v = localStorage.getItem(STORAGE_MESSAGES);
-      return v ? JSON.parse(v) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,10 +30,11 @@ export default function AssistantBot() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages.slice(-MAX_HISTORY)));
-    } catch (_) {}
-  }, [messages]);
+    if (!user) return;
+    assistantApi.history(MAX_HISTORY).then((res) => {
+      setMessages(res.messages || []);
+    }).catch(() => {});
+  }, [user?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -51,7 +47,7 @@ export default function AssistantBot() {
   useEffect(() => {
     if (!showWelcomeBubble) {
       try {
-        localStorage.setItem(STORAGE_FIRST_VISIT, '1');
+        sessionStorage.setItem(STORAGE_WELCOMED_SESSION, '1');
       } catch (_) {}
     }
   }, [showWelcomeBubble]);
@@ -67,14 +63,32 @@ export default function AssistantBot() {
 
   const labelNavegar = (ruta) => {
     const labels = {
-      '/desarrollo-social/encuestas': 'Ir al módulo',
-      '/desarrollo-social/estadisticas': 'Ir a Estadísticas',
-      '/desarrollo-social': 'Ir al módulo',
+      '/desarrollo-social': 'Ir al módulo Desarrollo Social',
+      '/desarrollo-social/encuestas': 'Ir al módulo Encuestas Sociales',
+      '/desarrollo-social/encuestas/nueva': 'Ir a Nueva Encuesta',
+      '/desarrollo-social/estadisticas': 'Ir al módulo Estadísticas',
+      '/desarrollo-social/auditoria': 'Ir al módulo Auditoría',
+      '/desarrollo-social/config/campos-dinamicos': 'Ir a Configuración → Campos dinámicos',
+      '/desarrollo-social/config/calles': 'Ir a Configuración → Calles',
+      '/desarrollo-social/config/barrios': 'Ir a Configuración → Barrios',
+      '/sistemas': 'Ir a Inicio',
     };
-    return labels[ruta] || `Ir a ${ruta}`;
+    if (labels[ruta]) return labels[ruta];
+    if (ruta?.startsWith('/desarrollo-social/config/')) return 'Ir a Configuración';
+    return 'Ir';
+  };
+
+  const accionPermitida = (accion) => {
+    if (isDsAdmin) return true;
+    if (accion.tipo === 'navegar' && accion.ruta) {
+      return !RUTAS_PROHIBIDAS_USER.some((r) => accion.ruta?.startsWith(r));
+    }
+    if (accion.tipo === 'generar_cruce') return false;
+    return true;
   };
 
   const ejecutarAccion = (accion) => {
+    if (!accionPermitida(accion)) return;
     if (accion.tipo === 'navegar' && accion.ruta) {
       navigate(accion.ruta);
       return;
@@ -128,7 +142,10 @@ export default function AssistantBot() {
     }
   };
 
-  const clearChat = () => {
+  const clearChat = async () => {
+    try {
+      await assistantApi.clearHistory();
+    } catch (_) {}
     setMessages([]);
     setError(null);
   };
@@ -139,7 +156,7 @@ export default function AssistantBot() {
   const botAvatar = user.avatar;
 
   return (
-    <div className={`assistant-bot ${!expanded ? 'assistant-bot--collapsed' : 'assistant-bot--expanded'}`}>
+    <div className={`assistant-bot ${!expanded && !showWelcomeBubble ? 'assistant-bot--collapsed' : 'assistant-bot--expanded'}`}>
       {expanded && (
         <div className="assistant-chat-panel">
           <div className="assistant-chat-header">
@@ -149,7 +166,7 @@ export default function AssistantBot() {
               </span>
               <div>
                 <strong>{botName}</strong>
-                <span className="assistant-chat-sub">Asistente SIGEMI</span>
+                <span className="assistant-chat-sub">Asistente SIDESO</span>
               </div>
             </div>
             <div className="assistant-chat-actions">
@@ -168,7 +185,7 @@ export default function AssistantBot() {
                 <p>Puedo ayudarte con:</p>
                 <ul>
                   <li>Cómo hacer tareas en el sistema</li>
-                  <li>Generar cruces dinámicos entre datos</li>
+                  {isDsAdmin && <li>Generar cruces dinámicos entre datos</li>}
                   <li>Explicar funciones y detectar errores</li>
                   <li>Información sobre encuestas, personas, asistencias</li>
                 </ul>
@@ -184,9 +201,9 @@ export default function AssistantBot() {
                 )}
                 <div className="assistant-msg-body">
                   <div className="assistant-msg-text">{m.content}</div>
-                  {m.acciones?.length > 0 && (
+                  {m.acciones?.filter(accionPermitida)?.length > 0 && (
                     <div className="assistant-msg-acciones">
-                      {m.acciones.map((a, j) => (
+                      {m.acciones.filter(accionPermitida).map((a, j) => (
                         <button
                           key={j}
                           type="button"

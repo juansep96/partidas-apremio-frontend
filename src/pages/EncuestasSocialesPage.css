@@ -833,6 +833,99 @@
   padding-top: 0;
 }
 
+.ficha-asistencias-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.ficha-asistencias-filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.ficha-asistencias-filtros input,
+.ficha-asistencias-filtros select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.ficha-asistencias-filtros input:focus,
+.ficha-asistencias-filtros select:focus {
+  outline: none;
+  border-color: #015a6a;
+}
+
+.ficha-btn-filter {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #015a6a;
+  color: white;
+  border: none;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.ficha-btn-filter:hover {
+  background: #027381;
+}
+
+.ficha-btn-ghost {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.ficha-btn-ghost:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.ficha-asistencias-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ficha-pag-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.ficha-pag-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.ficha-pag-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ficha-pag-info {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
 .ficha-asistencia-hint {
   font-size: 0.875rem;
   color: #64748b;
@@ -910,6 +1003,14 @@
 
 .ficha-grupo-card-clickable:focus-visible {
   box-shadow: 0 0 0 2px rgba(1, 90, 106, 0.3);
+}
+
+.ficha-grupo-card-clickable--readonly {
+  cursor: default;
+}
+
+.ficha-grupo-card-clickable--readonly:hover {
+  background: transparent;
 }
 
 .ficha-grupo-card-avatar {
@@ -1294,5 +1395,92 @@
     border-bottom: 1px solid #e2e8f0;
     padding-bottom: 1.5rem;
   }
+}
+
+/* Modal Nueva Encuesta */
+.nueva-encuesta-modal-overlay {
+  z-index: 350;
+}
+.nueva-encuesta-modal .admin-modal-body {
+  padding: 1.25rem 1.5rem;
+}
+.nueva-encuesta-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+.nueva-encuesta-modal-title h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+.nueva-encuesta-modal-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 400;
+}
+.nueva-encuesta-buscar.persona-buscar-titular-search {
+  margin-bottom: 0;
+}
+.nueva-encuesta-buscar input {
+  font-size: 1rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.nueva-encuesta-buscar input:focus {
+  outline: none;
+  border-color: #015a6a;
+  box-shadow: 0 0 0 2px rgba(1, 90, 106, 0.12);
+}
+.nueva-encuesta-buscar input::placeholder {
+  color: #94a3b8;
+}
+.nueva-encuesta-manual .admin-form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-size: 0.875rem;
+}
+.nueva-encuesta-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.nueva-encuesta-grupo-msg {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #475569;
+  margin: 0;
+}
+.nueva-encuesta-result p {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #475569;
+  margin: 0;
+}
+.nueva-encuesta-acciones {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+.nueva-encuesta-manual .admin-form-group {
+  margin-bottom: 0;
+}
+.nueva-encuesta-manual .admin-form-group input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  transition: border-color 0.2s;
+}
+.nueva-encuesta-manual .admin-form-group input:focus {
+  outline: none;
+  border-color: #015a6a;
 }
 

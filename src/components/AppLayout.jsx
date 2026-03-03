@@ -111,7 +111,7 @@ export default function AppLayout({ children }) {
             type="button"
             aria-label="Ir a inicio"
           >
-            <img src={LOGO_URL} alt="SIGEMI" className="app-logo-img" />
+            <img src={LOGO_URL} alt="SIDESO" className="app-logo-img" />
           </button>
 
           <nav className="app-nav">

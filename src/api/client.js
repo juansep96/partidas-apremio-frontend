@@ -45,6 +45,8 @@ export async function apiRequest(endpoint, options = {}) {
 }
 
 export const assistantApi = {
+  history: (limit = 20) => apiRequest(`/assistant/history?limit=${limit}`),
+  clearHistory: () => apiRequest('/assistant/history', { method: 'DELETE' }),
   chat: (message, history = []) => apiRequest('/assistant/chat', {
     method: 'POST',
     body: JSON.stringify({ message, history }),
@@ -137,7 +139,7 @@ export const backupApi = {
     }
     const blob = await res.blob();
     const cd = res.headers.get('Content-Disposition');
-    const filename = cd?.match(/filename="?([^"]+)"?/)?.[1] || `sigemi-backup-${new Date().toISOString().slice(0, 10)}.enc`;
+    const filename = cd?.match(/filename="?([^"]+)"?/)?.[1] || `SIDESO-backup-${new Date().toISOString().slice(0, 10)}.enc`;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -225,7 +227,10 @@ export const dsApi = {
         apiRequest(`/ds/personas/${personaId}/documentos/${docId}`, { method: 'DELETE' }),
     },
     asistencias: {
-      list: (personaId) => apiRequest(`/ds/personas/${personaId}/asistencias`),
+      list: (personaId, params = {}) => {
+        const sp = new URLSearchParams(params).toString();
+        return apiRequest(`/ds/personas/${personaId}/asistencias${sp ? `?${sp}` : ''}`);
+      },
       create: (personaId, data) =>
         apiRequest(`/ds/personas/${personaId}/asistencias`, { method: 'POST', body: JSON.stringify(data) }),
       delete: (personaId, asistenciaId) =>
@@ -622,6 +627,68 @@ export const encuestasSocialesApi = {
     method: 'POST',
     body: JSON.stringify({ personaId }),
   }),
+  personas: {
+    updateDatosContacto: (personaId, data) =>
+      apiRequest(`/encuestas-sociales/personas/${personaId}/datos-contacto`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    asistencias: {
+      list: (personaId, params = {}) => {
+        const sp = new URLSearchParams(params).toString();
+        return apiRequest(`/encuestas-sociales/personas/${personaId}/asistencias${sp ? `?${sp}` : ''}`);
+      },
+      create: (personaId, data) =>
+        apiRequest(`/encuestas-sociales/personas/${personaId}/asistencias`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+    },
+    documentos: {
+      list: (personaId) => apiRequest(`/encuestas-sociales/personas/${personaId}/documentos`),
+      upload: async (personaId, formData) => {
+        const token = getToken();
+        const headers = { Accept: 'application/json' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}/encuestas-sociales/personas/${personaId}/documentos`, {
+          method: 'POST',
+          body: formData,
+          headers,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('systems');
+          window.location.href = '/login';
+          throw new Error('Sesión expirada');
+        }
+        if (!res.ok) throw new Error(data.message || data.errors?.archivo?.[0] || 'Error al subir');
+        return data;
+      },
+      getDownloadUrl: (personaId, docId, disposition = 'attachment') =>
+        `${API_BASE}/encuestas-sociales/personas/${personaId}/documentos/${docId}/download?disposition=${disposition}`,
+      download: async (personaId, docId, filename, disposition = 'attachment') => {
+        const token = getToken();
+        const url = `${API_BASE}/encuestas-sociales/personas/${personaId}/documentos/${docId}/download?disposition=${disposition}`;
+        const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (!res.ok) throw new Error('Error al descargar');
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        if (disposition === 'attachment') {
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename || 'documento';
+          a.click();
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          window.open(blobUrl, '_blank');
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        }
+      },
+    },
+  },
+  camposAsistencia: () => apiRequest('/encuestas-sociales/campos-asistencia'),
 };
 
 export const camposDinamicosApi = {

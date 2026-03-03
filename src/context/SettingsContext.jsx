@@ -8,7 +8,7 @@ const FONT_SCALES = [
   { value: 1.25, label: 'Muy grande' },
 ];
 
-const STORAGE_KEY_PREFIX = 'sigemi-font-scale';
+const STORAGE_KEY_PREFIX = 'SIDESO-font-scale';
 
 const SettingsContext = createContext(null);
 

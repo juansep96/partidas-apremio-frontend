@@ -74,9 +74,19 @@ export default function EncuestasSocialesPage() {
   const [fichaAsistenciasLoading, setFichaAsistenciasLoading] = useState(false);
   const [fichaAsistenciaSaving, setFichaAsistenciaSaving] = useState(false);
   const [fichaAsistenciaDeleting, setFichaAsistenciaDeleting] = useState(null);
+  const [fichaAsistenciasFiltros, setFichaAsistenciasFiltros] = useState({ fechaDesde: '', fechaHasta: '', tipo: '', estado: '' });
+  const [fichaAsistenciasPage, setFichaAsistenciasPage] = useState(1);
+  const [fichaAsistenciasMeta, setFichaAsistenciasMeta] = useState(null);
+  const [fichaAsistenciasOpciones, setFichaAsistenciasOpciones] = useState({ tipo: [], estado: [] });
   const [camposAsistencia, setCamposAsistencia] = useState([]);
   const [agregarAsistenciaOpen, setAgregarAsistenciaOpen] = useState(false);
   const [agregarAsistenciaForm, setAgregarAsistenciaForm] = useState({ camposDinamicos: {} });
+  const [nuevaEncuestaModalOpen, setNuevaEncuestaModalOpen] = useState(false);
+  const [nuevaEncuestaDni, setNuevaEncuestaDni] = useState('');
+  const [nuevaEncuestaSearching, setNuevaEncuestaSearching] = useState(false);
+  const [nuevaEncuestaResult, setNuevaEncuestaResult] = useState(null);
+  const [nuevaEncuestaFormManual, setNuevaEncuestaFormManual] = useState({ apellido: '', nombre: '' });
+  const [nuevaEncuestaGuardando, setNuevaEncuestaGuardando] = useState(false);
 
   const loadTitulares = useCallback(async () => {
     setLoading(true);
@@ -229,31 +239,52 @@ export default function EncuestasSocialesPage() {
     setGrupoAgregarOpen(false);
     setFichaDocumentos([]);
     setFichaAsistencias([]);
+    setFichaAsistenciasFiltros({ fechaDesde: '', fechaHasta: '', tipo: '', estado: '' });
+    setFichaAsistenciasPage(1);
+    setFichaAsistenciasMeta(null);
     setAgregarAsistenciaOpen(false);
   };
 
-  const loadFichaAsistencias = useCallback(async () => {
+  const loadFichaAsistencias = useCallback(async (pagina = 1) => {
     if (!fichaPersona?.id || fichaPersona.esTitular === false) return;
     setFichaAsistenciasLoading(true);
     try {
-      const res = await dsApi.personas.asistencias.list(fichaPersona.id);
+      const params = { page: pagina, per_page: 10 };
+      if (fichaAsistenciasFiltros.fechaDesde) params.fecha_desde = fichaAsistenciasFiltros.fechaDesde;
+      if (fichaAsistenciasFiltros.fechaHasta) params.fecha_hasta = fichaAsistenciasFiltros.fechaHasta;
+      if (fichaAsistenciasFiltros.tipo) params.tipo = fichaAsistenciasFiltros.tipo;
+      if (fichaAsistenciasFiltros.estado) params.estado = fichaAsistenciasFiltros.estado;
+      const res = await encuestasSocialesApi.personas.asistencias.list(fichaPersona.id, params);
       setFichaAsistencias(res.data || []);
+      setFichaAsistenciasMeta(res.meta || null);
+      setFichaAsistenciasOpciones(res.opciones || { tipo: [], estado: [] });
     } catch {
       setFichaAsistencias([]);
+      setFichaAsistenciasMeta(null);
     } finally {
       setFichaAsistenciasLoading(false);
     }
-  }, [fichaPersona?.id, fichaPersona?.esTitular]);
+  }, [fichaPersona?.id, fichaPersona?.esTitular, fichaAsistenciasFiltros]);
 
   useEffect(() => {
     if (fichaRightTab === 'asistencias' && fichaPersona?.id) {
-      loadFichaAsistencias();
+      loadFichaAsistencias(fichaAsistenciasPage);
     }
-  }, [fichaRightTab, fichaPersona?.id, loadFichaAsistencias]);
+  }, [fichaRightTab, fichaPersona?.id, loadFichaAsistencias, fichaAsistenciasPage]);
+
+  const aplicarFiltrosAsistencias = () => {
+    setFichaAsistenciasPage(1);
+    loadFichaAsistencias(1);
+  };
+
+  const limpiarFiltrosAsistencias = () => {
+    setFichaAsistenciasFiltros({ fechaDesde: '', fechaHasta: '', tipo: '', estado: '' });
+    setFichaAsistenciasPage(1);
+  };
 
   useEffect(() => {
     if (fichaRightTab === 'asistencias' || agregarAsistenciaOpen) {
-      dsApi.camposDinamicos.list({ applies_to: 'asistencia' }).then((r) => {
+      encuestasSocialesApi.camposAsistencia().then((r) => {
         const lista = r.data || [];
         setCamposAsistencia(lista);
         lista.filter((c) => c.tipo === 'select_tabla').forEach((c) => {
@@ -286,12 +317,12 @@ export default function EncuestasSocialesPage() {
     if (!fichaPersona?.id) return;
     setFichaAsistenciaSaving(true);
     try {
-      await dsApi.personas.asistencias.create(fichaPersona.id, {
+      await encuestasSocialesApi.personas.asistencias.create(fichaPersona.id, {
         camposDinamicos: agregarAsistenciaForm.camposDinamicos || {},
       });
       setAgregarAsistenciaOpen(false);
       setAgregarAsistenciaForm({ camposDinamicos: {} });
-      loadFichaAsistencias();
+      loadFichaAsistencias(1);
       refreshFicha();
       sileo.success({ title: 'Asistencia registrada' });
     } catch (err) {
@@ -306,7 +337,7 @@ export default function EncuestasSocialesPage() {
     setFichaAsistenciaDeleting(a.id);
     try {
       await dsApi.personas.asistencias.delete(fichaPersona.id, a.id);
-      loadFichaAsistencias();
+      loadFichaAsistencias(fichaAsistenciasPage);
       refreshFicha();
       sileo.success({ title: 'Asistencia eliminada' });
     } catch (err) {
@@ -321,7 +352,7 @@ export default function EncuestasSocialesPage() {
     const personaId = fichaPersona.id;
     setFichaDocumentosLoading(true);
     try {
-      const res = await dsApi.personas.documentos.list(personaId);
+      const res = await encuestasSocialesApi.personas.documentos.list(personaId);
       setFichaDocumentos(res.data || []);
     } catch {
       setFichaDocumentos([]);
@@ -344,7 +375,7 @@ export default function EncuestasSocialesPage() {
       const fd = new FormData();
       fd.append('archivo', docUploadForm.archivo);
       fd.append('descripcion', docUploadForm.descripcion || '');
-      await dsApi.personas.documentos.upload(personaId, fd);
+      await encuestasSocialesApi.personas.documentos.upload(personaId, fd);
       setDocUploadForm({ archivo: null, descripcion: '' });
       if (docFileInputRef.current) docFileInputRef.current.value = '';
       loadFichaDocumentos();
@@ -360,7 +391,7 @@ export default function EncuestasSocialesPage() {
   const descargarDocumento = (doc) => {
     const personaId = fichaPersona?.id;
     if (!personaId) return;
-    dsApi.personas.documentos.download(personaId, doc.id, doc.nombreOriginal, 'attachment').catch((e) =>
+    encuestasSocialesApi.personas.documentos.download(personaId, doc.id, doc.nombreOriginal, 'attachment').catch((e) =>
       sileo.error({ title: 'Error', description: e.message })
     );
   };
@@ -368,7 +399,7 @@ export default function EncuestasSocialesPage() {
   const abrirDocumento = (doc) => {
     const personaId = fichaPersona?.id;
     if (!personaId) return;
-    dsApi.personas.documentos.download(personaId, doc.id, doc.nombreOriginal, 'inline').catch((e) =>
+    encuestasSocialesApi.personas.documentos.download(personaId, doc.id, doc.nombreOriginal, 'inline').catch((e) =>
       sileo.error({ title: 'Error', description: e.message })
     );
   };
@@ -741,6 +772,117 @@ export default function EncuestasSocialesPage() {
     setEncuestaEditId(null);
   };
 
+  const buscarNuevaEncuestaTitular = useCallback(async () => {
+    const dni = nuevaEncuestaDni.replace(/\D/g, '').slice(0, 8);
+    if (dni.length < 7 || dni.length > 8) {
+      sileo.error({ title: 'DNI inválido', description: 'El DNI debe tener 7 u 8 dígitos.' });
+      return;
+    }
+    setNuevaEncuestaSearching(true);
+    setNuevaEncuestaResult(null);
+    try {
+      const res = await encuestasSocialesApi.wizardPersonaBuscar(dni);
+      if (res.exists) {
+        if (res.inModule && res.esTitular) {
+          setNuevaEncuestaModalOpen(false);
+          setNuevaEncuestaResult(null);
+          openFicha({ dni: res.persona.dni, esTitular: true });
+          return;
+        }
+        if (res.inModule && !res.esTitular) {
+          const t = res.persona?.titular;
+          setNuevaEncuestaResult({
+            tipo: 'grupo',
+            persona: res.persona,
+            titularInfo: t ? { dni: t.dni, apellido: t.apellido, nombre: t.nombre, id: t.id } : null,
+          });
+          return;
+        }
+        if (!res.inModule) {
+          setNuevaEncuestaResult({
+            tipo: 'noModulo',
+            persona: res.persona,
+            formData: {
+              id: res.persona.id,
+              dni: res.persona.dni,
+              apellido: res.persona.apellido,
+              nombre: res.persona.nombre,
+              camposDinamicos: res.persona.camposDinamicos || {},
+            },
+          });
+          return;
+        }
+      }
+      const padronRes = await encuestasSocialesApi.wizardPadronBuscar(dni);
+      if (padronRes.success && padronRes.data) {
+        const d = padronRes.data;
+        setNuevaEncuestaResult({
+          tipo: 'padron',
+          formData: {
+            id: null,
+            dni: d.dni || dni,
+            apellido: d.apellido || '',
+            nombre: d.nombre || '',
+            camposDinamicos: {},
+          },
+        });
+        return;
+      }
+      setNuevaEncuestaResult({
+        tipo: 'manual',
+        formData: { id: null, dni, apellido: '', nombre: '', camposDinamicos: {} },
+      });
+      setNuevaEncuestaFormManual({ apellido: '', nombre: '' });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err?.message || 'Error al buscar.' });
+    } finally {
+      setNuevaEncuestaSearching(false);
+    }
+  }, [nuevaEncuestaDni, openFicha]);
+
+  const confirmarNuevaEncuestaCrearPersona = useCallback(async () => {
+    const r = nuevaEncuestaResult;
+    if (!r || !['noModulo', 'padron', 'manual'].includes(r.tipo)) return;
+    const fd = r.formData;
+    let payload = { ...fd };
+    if (r.tipo === 'manual') {
+      const ap = (nuevaEncuestaFormManual.apellido || '').trim();
+      const nom = (nuevaEncuestaFormManual.nombre || '').trim();
+      if (!ap || !nom) {
+        sileo.error({ title: 'Datos requeridos', description: 'Ingresá apellido y nombre.' });
+        return;
+      }
+      payload = { ...fd, apellido: ap, nombre: nom };
+    }
+    setNuevaEncuestaGuardando(true);
+    try {
+      const res = await encuestasSocialesApi.wizardPersonaGuardar({
+        id: payload.id,
+        dni: String(payload.dni || '').replace(/\D/g, '').slice(0, 8),
+        apellido: (payload.apellido || '').trim(),
+        nombre: (payload.nombre || '').trim(),
+        idTitular: null,
+        camposDinamicos: payload.camposDinamicos || {},
+      });
+      setNuevaEncuestaModalOpen(false);
+      setNuevaEncuestaResult(null);
+      loadTitulares();
+      openFicha({ dni: res.persona.dni, esTitular: true });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err?.message || 'Error al guardar.' });
+    } finally {
+      setNuevaEncuestaGuardando(false);
+    }
+  }, [nuevaEncuestaResult, nuevaEncuestaFormManual, loadTitulares, openFicha]);
+
+  const abrirFichaTitularDesdeGrupo = useCallback(() => {
+    const r = nuevaEncuestaResult;
+    if (!r || r.tipo !== 'grupo' || !r.titularInfo) return;
+    setNuevaEncuestaModalOpen(false);
+    setNuevaEncuestaResult(null);
+    openFicha({ dni: r.titularInfo.dni, esTitular: true });
+  }, [nuevaEncuestaResult, openFicha]);
+
   useEffect(() => {
     if ((modal === 'create' || modal === 'edit') && campos.length > 0) {
       campos.filter((c) => c.tipo === 'select_tabla').forEach((c) => {
@@ -797,6 +939,13 @@ export default function EncuestasSocialesPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const campoEditablePorUser = (c) => {
+    const keywords = ['telefono', 'teléfono', 'calle', 'altura', 'piso', 'dpto', 'depto'];
+    const slug = (c.slug || '').toLowerCase();
+    const nombre = (c.nombre || '').toLowerCase();
+    return keywords.some((kw) => slug.includes(kw) || nombre.includes(kw));
   };
 
   const titularesFiltrados = (titularSearch.trim()
@@ -889,6 +1038,20 @@ export default function EncuestasSocialesPage() {
             <h1>Encuestas Sociales</h1>
             <p>Personas del módulo Desarrollo Social</p>
           </div>
+          {isDsAdmin && (
+            <button
+              type="button"
+              className="admin-btn-primary"
+              onClick={() => {
+                setNuevaEncuestaModalOpen(true);
+                setNuevaEncuestaDni('');
+                setNuevaEncuestaResult(null);
+                setNuevaEncuestaFormManual({ apellido: '', nombre: '' });
+              }}
+            >
+              + Nueva Encuesta
+            </button>
+          )}
         </header>
 
         <div className="admin-filters-bar">
@@ -945,11 +1108,11 @@ export default function EncuestasSocialesPage() {
               <table className="encuestas-table">
                 <thead>
                   <tr>
-                    <th>Titular / Grupo</th>
                     <th>DNI</th>
                     <th>Apellido</th>
                     <th>Nombre</th>
                     <th>Domicilio</th>
+                    <th>Titular / Grupo</th>
                     <th>Fecha última encuesta</th>
                   </tr>
                 </thead>
@@ -965,20 +1128,20 @@ export default function EncuestasSocialesPage() {
                         tabIndex={0}
                         onKeyDown={(e) => e.key === 'Enter' && openFicha(row)}
                       >
+                        <td>{row.dni || '-'}</td>
+                        <td>{(row.apellido || '-').toUpperCase()}</td>
+                        <td><strong>{(row.nombre || '-').toUpperCase()}</strong></td>
+                        <td>{(row.domicilio || '-').toUpperCase()}</td>
                         <td>
-                            {esTitular ? (
-                              <span className="encuestas-tipo-badge encuestas-tipo-titular">Titular</span>
-                            ) : (
-                              <div className="encuestas-td-titular-grupo">
-                                <span className="encuestas-tipo-badge encuestas-tipo-grupo">Grupo - DNI {row.titularRef?.dni ?? '-'} - {(row.titularRef?.nombreCompleto || '').toUpperCase()}</span>
-                              </div>
-                            )}
-                          </td>
-                          <td>{row.dni || '-'}</td>
-                          <td>{(row.apellido || '-').toUpperCase()}</td>
-                          <td><strong>{(row.nombre || '-').toUpperCase()}</strong></td>
-                          <td>{(row.domicilio || '-').toUpperCase()}</td>
-                          <td>{formatFecha(row.fechaUltimaEncuesta)}</td>
+                          {esTitular ? (
+                            <span className="encuestas-tipo-badge encuestas-tipo-titular">Titular</span>
+                          ) : (
+                            <div className="encuestas-td-titular-grupo">
+                              <span className="encuestas-tipo-badge encuestas-tipo-grupo">Grupo - DNI {row.titularRef?.dni ?? '-'} - {(row.titularRef?.nombreCompleto || '').toUpperCase()}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td>{formatFecha(row.fechaUltimaEncuesta)}</td>
                       </tr>
                     );
                   })}
@@ -1060,6 +1223,96 @@ export default function EncuestasSocialesPage() {
           </div>
         )}
 
+        {nuevaEncuestaModalOpen && (
+          <div className="admin-modal-overlay nueva-encuesta-modal-overlay" onClick={() => setNuevaEncuestaModalOpen(false)}>
+            <div className="admin-modal admin-modal--narrow persona-buscar-titular-modal nueva-encuesta-modal" onClick={(e) => e.stopPropagation()} role="dialog">
+              <header className="admin-modal-header nueva-encuesta-modal-header">
+                <div className="nueva-encuesta-modal-title">
+                  <h2>Nueva Encuesta</h2>
+                  {!nuevaEncuestaResult && <p className="nueva-encuesta-modal-subtitle">Ingresá el DNI del titular (7 u 8 dígitos)</p>}
+                </div>
+                <button type="button" className="admin-modal-close" onClick={() => setNuevaEncuestaModalOpen(false)} aria-label="Cerrar">×</button>
+              </header>
+              <div className="admin-modal-body persona-buscar-titular-body">
+                {!nuevaEncuestaResult ? (
+                  <div className="persona-buscar-titular-search nueva-encuesta-buscar">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ej: 12345678"
+                      value={nuevaEncuestaDni}
+                      onChange={(e) => setNuevaEncuestaDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), buscarNuevaEncuestaTitular())}
+                      autoFocus
+                    />
+                    <button type="button" className="admin-btn-primary" onClick={buscarNuevaEncuestaTitular} disabled={nuevaEncuestaSearching}>
+                      {nuevaEncuestaSearching ? 'Buscando...' : 'Buscar'}
+                    </button>
+                  </div>
+                ) : nuevaEncuestaResult.tipo === 'grupo' ? (
+                  <div className="nueva-encuesta-result nueva-encuesta-grupo">
+                    <p className="nueva-encuesta-grupo-msg">
+                      Esta persona pertenece al grupo de <strong>{nuevaEncuestaResult.titularInfo?.apellido}, {nuevaEncuestaResult.titularInfo?.nombre}</strong> (DNI {nuevaEncuestaResult.titularInfo?.dni}).
+                    </p>
+                    <p>Primero desvinculála del grupo desde la ficha del titular para poder crear una encuesta como titular.</p>
+                    <div className="nueva-encuesta-acciones">
+                      <button type="button" className="admin-btn-primary" onClick={abrirFichaTitularDesdeGrupo}>
+                        Ir a ficha del titular
+                      </button>
+                      <button type="button" className="admin-btn-ghost" onClick={() => { setNuevaEncuestaResult(null); setNuevaEncuestaDni(''); }}>Buscar otro DNI</button>
+                    </div>
+                  </div>
+                ) : nuevaEncuestaResult.tipo === 'manual' ? (
+                  <div className="nueva-encuesta-result nueva-encuesta-manual">
+                    <p>No se encontró en personas ni en el padrón electoral. Ingresá apellido y nombre para crear la persona.</p>
+                    <div className="admin-form-group">
+                      <label>Apellido</label>
+                      <input
+                        type="text"
+                        value={nuevaEncuestaFormManual.apellido}
+                        onChange={(e) => setNuevaEncuestaFormManual((f) => ({ ...f, apellido: e.target.value }))}
+                        placeholder="Apellido"
+                      />
+                    </div>
+                    <div className="admin-form-group">
+                      <label>Nombre</label>
+                      <input
+                        type="text"
+                        value={nuevaEncuestaFormManual.nombre}
+                        onChange={(e) => setNuevaEncuestaFormManual((f) => ({ ...f, nombre: e.target.value }))}
+                        placeholder="Nombre"
+                      />
+                    </div>
+                    <div className="nueva-encuesta-acciones">
+                      <button type="button" className="admin-btn-primary" onClick={confirmarNuevaEncuestaCrearPersona} disabled={nuevaEncuestaGuardando}>
+                        {nuevaEncuestaGuardando ? 'Creando...' : 'Crear persona y abrir ficha'}
+                      </button>
+                      <button type="button" className="admin-btn-ghost" onClick={() => { setNuevaEncuestaResult(null); setNuevaEncuestaDni(''); }}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="nueva-encuesta-result nueva-encuesta-confirmar">
+                    <p>
+                      {nuevaEncuestaResult.tipo === 'noModulo'
+                        ? 'Esta persona existe pero no está en el módulo Desarrollo Social. Se asociará al módulo como titular.'
+                        : 'Se creará la persona desde el padrón electoral y se abrirá la ficha para completar datos.'}
+                    </p>
+                    {nuevaEncuestaResult.formData && (
+                      <p><strong>{nuevaEncuestaResult.formData.apellido}, {nuevaEncuestaResult.formData.nombre}</strong> — DNI {nuevaEncuestaResult.formData.dni}</p>
+                    )}
+                    <div className="nueva-encuesta-acciones">
+                      <button type="button" className="admin-btn-primary" onClick={confirmarNuevaEncuestaCrearPersona} disabled={nuevaEncuestaGuardando}>
+                        {nuevaEncuestaGuardando ? 'Procesando...' : 'Continuar y abrir ficha'}
+                      </button>
+                      <button type="button" className="admin-btn-ghost" onClick={() => { setNuevaEncuestaResult(null); setNuevaEncuestaDni(''); }}>Cancelar</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {(fichaPersona || fichaLoading) && (
           <div className="admin-modal-overlay ficha-modal-overlay" onClick={closeFicha}>
             <div className="admin-modal ficha-modal ficha-modal--wide" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
@@ -1115,31 +1368,72 @@ export default function EncuestasSocialesPage() {
                         <section className="ficha-section">
                           <h4>Datos adicionales</h4>
                           <div className="ficha-campos-grid">
-                            {camposTitular.map((c) => (
-                              <div key={c.id} className="ficha-campo">
-                                <label>{c.nombre}</label>
-                                {isDsAdmin ? (
-                                  renderCampoInput(c, fichaEditData.camposDinamicos?.[c.slug], (v) => setFichaEditData((d) => ({
-                                    ...d,
-                                    camposDinamicos: { ...(d.camposDinamicos || {}), [c.slug]: v },
-                                  })))
-                                ) : (
-                                  <span className="ficha-campo-valor">
-                                    {c.tipo === 'boolean'
-                                      ? (fichaEditData.camposDinamicos?.[c.slug] === '1' || fichaEditData.camposDinamicos?.[c.slug] === 'true' ? 'Sí' : 'No')
-                                      : c.tipo === 'select_tabla'
-                                        ? ((() => {
-                                            const key = `${c.tablaConfig?.tabla || 'calles'}_${c.tablaConfig?.localidad || ''}`;
-                                            const opts = opcionesCache[key] || [];
-                                            const opt = opts.find((o) => o.value === (fichaEditData.camposDinamicos?.[c.slug] ?? ''));
-                                            return opt?.label ?? fichaEditData.camposDinamicos?.[c.slug] ?? '-';
-                                          })())
-                                        : (fichaEditData.camposDinamicos?.[c.slug] || '-')}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
+                            {camposTitular.map((c) => {
+                              const puedeEditar = isDsAdmin || campoEditablePorUser(c);
+                              return (
+                                <div key={c.id} className="ficha-campo">
+                                  <label>{c.nombre}</label>
+                                  {puedeEditar ? (
+                                    renderCampoInput(c, fichaEditData.camposDinamicos?.[c.slug], (v) => setFichaEditData((d) => ({
+                                      ...d,
+                                      camposDinamicos: { ...(d.camposDinamicos || {}), [c.slug]: v },
+                                    })))
+                                  ) : (
+                                    <span className="ficha-campo-valor">
+                                      {c.tipo === 'boolean'
+                                        ? (fichaEditData.camposDinamicos?.[c.slug] === '1' || fichaEditData.camposDinamicos?.[c.slug] === 'true' ? 'Sí' : 'No')
+                                        : c.tipo === 'select_tabla'
+                                          ? ((() => {
+                                              const key = `${c.tablaConfig?.tabla || 'calles'}_${c.tablaConfig?.localidad || ''}`;
+                                              const opts = opcionesCache[key] || [];
+                                              const opt = opts.find((o) => o.value === (fichaEditData.camposDinamicos?.[c.slug] ?? ''));
+                                              return opt?.label ?? fichaEditData.camposDinamicos?.[c.slug] ?? '-';
+                                            })())
+                                          : (fichaEditData.camposDinamicos?.[c.slug] || '-')}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
+                          {!isDsAdmin && camposTitular.some(campoEditablePorUser) && (
+                            <div className="ficha-datos-contacto-actions">
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn-primary"
+                                disabled={fichaSaving}
+                                onClick={async () => {
+                                  if (!fichaPersona?.id || !fichaEditData) return;
+                                  setFichaSaving(true);
+                                  try {
+                                    const editableCampos = {};
+                                    camposTitular.filter(campoEditablePorUser).forEach((c) => {
+                                      editableCampos[c.slug] = fichaEditData.camposDinamicos?.[c.slug];
+                                    });
+                                    const res = await encuestasSocialesApi.personas.updateDatosContacto(fichaPersona.id, {
+                                      camposDinamicos: editableCampos,
+                                    });
+                                    if (res.persona) {
+                                      fichaJustOpenedRef.current = true;
+                                      setFichaPersona(res.persona);
+                                      setFichaEditData((d) => ({
+                                        ...d,
+                                        camposDinamicos: { ...(d.camposDinamicos || {}), ...(res.persona.camposDinamicos || {}) },
+                                      }));
+                                      sileo.success({ title: 'Guardado' });
+                                      loadTitulares();
+                                    }
+                                  } catch (err) {
+                                    sileo.error({ title: 'Error', description: err?.message || 'Error al guardar' });
+                                  } finally {
+                                    setFichaSaving(false);
+                                  }
+                                }}
+                              >
+                                {fichaSaving ? 'Guardando...' : 'Guardar teléfono y domicilio'}
+                              </button>
+                            </div>
+                          )}
                         </section>
                       )}
                     </div>
@@ -1203,7 +1497,7 @@ export default function EncuestasSocialesPage() {
                           <section className="ficha-section ficha-grupo-section">
                             <div className="ficha-grupo-header">
                               <h4>Integrantes del grupo</h4>
-                              {fichaPersona.esTitular !== false && (
+                              {fichaPersona.esTitular !== false && isDsAdmin && (
                                 <button type="button" className="ficha-btn-add" onClick={() => setGrupoAgregarOpen(true)}>
                                   + Agregar integrante
                                 </button>
@@ -1216,17 +1510,18 @@ export default function EncuestasSocialesPage() {
                                 {fichaPersona.grupoFamiliar.map((m) => (
                                   <li key={m.id} className="ficha-grupo-card">
                                     <div
-                                      className="ficha-grupo-card-clickable"
-                                      role="button"
-                                      tabIndex={0}
-                                      onClick={() => openEditGrupo(m)}
-                                      onKeyDown={(e) => e.key === 'Enter' && openEditGrupo(m)}
+                                      className={`ficha-grupo-card-clickable ${!isDsAdmin ? 'ficha-grupo-card-clickable--readonly' : ''}`}
+                                      role={isDsAdmin ? 'button' : undefined}
+                                      tabIndex={isDsAdmin ? 0 : undefined}
+                                      onClick={() => isDsAdmin && openEditGrupo(m)}
+                                      onKeyDown={(e) => isDsAdmin && e.key === 'Enter' && openEditGrupo(m)}
                                     >
                                       <div className="ficha-grupo-card-info">
                                         <strong>{m.nombreCompleto}</strong>
                                         <span>DNI {m.dni}</span>
                                       </div>
                                     </div>
+                                    {isDsAdmin && (
                                     <button
                                       type="button"
                                       className="ficha-grupo-btn ficha-grupo-btn-desvincular"
@@ -1247,6 +1542,7 @@ export default function EncuestasSocialesPage() {
                                         </>
                                       )}
                                     </button>
+                                    )}
                                   </li>
                                 ))}
                               </ul>
@@ -1257,7 +1553,7 @@ export default function EncuestasSocialesPage() {
                           <section className="ficha-section ficha-encuestas-section">
                             <div className="ficha-grupo-header">
                               <h4>Encuestas realizadas</h4>
-                              {fichaPersona.esTitular !== false && (
+                              {fichaPersona.esTitular !== false && isDsAdmin && (
                                 <button
                                   type="button"
                                   className="ficha-btn-add"
@@ -1301,15 +1597,19 @@ export default function EncuestasSocialesPage() {
                                             <button type="button" className="ficha-encuestas-accion" onClick={() => abrirEncuesta(e.id)} title="Abrir">
                                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                                             </button>
-                                            <button type="button" className="ficha-encuestas-accion" onClick={() => editarEncuesta(e.id)} title="Editar">
-                                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                                            </button>
-                                            <button type="button" className="ficha-encuestas-accion" onClick={() => renovarEncuesta(e.id)} disabled={encuestaRenovando === e.id} title="Renovar">
-                                              {encuestaRenovando === e.id ? <span style={{ fontSize: '0.75rem' }}>...</span> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>}
-                                            </button>
-                                            <button type="button" className="ficha-encuestas-accion ficha-encuestas-accion--delete" onClick={() => eliminarEncuesta(e.id)} disabled={encuestaEliminando === e.id} title="Eliminar">
-                                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                                            </button>
+                                            {isDsAdmin && (
+                                              <>
+                                                <button type="button" className="ficha-encuestas-accion" onClick={() => editarEncuesta(e.id)} title="Editar">
+                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                                </button>
+                                                <button type="button" className="ficha-encuestas-accion" onClick={() => renovarEncuesta(e.id)} disabled={encuestaRenovando === e.id} title="Renovar">
+                                                  {encuestaRenovando === e.id ? <span style={{ fontSize: '0.75rem' }}>...</span> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>}
+                                                </button>
+                                                <button type="button" className="ficha-encuestas-accion ficha-encuestas-accion--delete" onClick={() => eliminarEncuesta(e.id)} disabled={encuestaEliminando === e.id} title="Eliminar">
+                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                                                </button>
+                                              </>
+                                            )}
                                           </div>
                                         </td>
                                       </tr>
@@ -1332,36 +1632,109 @@ export default function EncuestasSocialesPage() {
                             </div>
                             {fichaPersona.esTitular === false ? (
                               <p className="ficha-grupo-empty">Las asistencias se gestionan desde la ficha del titular.</p>
-                            ) : fichaAsistenciasLoading ? (
-                              <p className="ficha-grupo-empty">Cargando...</p>
-                            ) : !fichaAsistencias.length ? (
-                              <p className="ficha-grupo-empty">No hay asistencias registradas.</p>
                             ) : (
-                              <ul className="ficha-asistencias-list">
-                                {fichaAsistencias.map((a) => (
-                                  <li key={a.id} className="ficha-asistencia-card">
-                                    <div className="ficha-asistencia-info">
-                                      <span className="ficha-asistencia-fecha">
-                                        {a.createdAt ? new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
-                                      </span>
-                                      {Object.entries(a.camposDinamicos || {}).map(([k, v]) => (
-                                        v != null && v !== '' && <span key={k} className="ficha-asistencia-campo">{k}: {String(v)}</span>
+                              <>
+                                <div className="ficha-asistencias-filtros">
+                                  <label>
+                                    <span>Desde</span>
+                                    <input
+                                      type="date"
+                                      value={fichaAsistenciasFiltros.fechaDesde}
+                                      onChange={(e) => setFichaAsistenciasFiltros((f) => ({ ...f, fechaDesde: e.target.value }))}
+                                    />
+                                  </label>
+                                  <label>
+                                    <span>Hasta</span>
+                                    <input
+                                      type="date"
+                                      value={fichaAsistenciasFiltros.fechaHasta}
+                                      onChange={(e) => setFichaAsistenciasFiltros((f) => ({ ...f, fechaHasta: e.target.value }))}
+                                    />
+                                  </label>
+                                  <label>
+                                    <span>Tipo</span>
+                                    <select
+                                      value={fichaAsistenciasFiltros.tipo}
+                                      onChange={(e) => setFichaAsistenciasFiltros((f) => ({ ...f, tipo: e.target.value }))}
+                                    >
+                                      <option value="">Todos</option>
+                                      {(fichaAsistenciasOpciones.tipo || []).map((o) => (
+                                        <option key={o.valor} value={o.valor}>{o.label ?? o.valor}</option>
                                       ))}
+                                    </select>
+                                  </label>
+                                  <label>
+                                    <span>Estado</span>
+                                    <select
+                                      value={fichaAsistenciasFiltros.estado}
+                                      onChange={(e) => setFichaAsistenciasFiltros((f) => ({ ...f, estado: e.target.value }))}
+                                    >
+                                      <option value="">Todos</option>
+                                      {(fichaAsistenciasOpciones.estado || []).map((o) => (
+                                        <option key={o.valor} value={o.valor}>{o.label ?? o.valor}</option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                  <button type="button" className="ficha-btn-filter" onClick={aplicarFiltrosAsistencias}>Filtrar</button>
+                                  <button type="button" className="ficha-btn-ghost" onClick={limpiarFiltrosAsistencias}>Limpiar</button>
+                                </div>
+                                {fichaAsistenciasLoading ? (
+                                  <p className="ficha-grupo-empty">Cargando...</p>
+                                ) : !fichaAsistencias.length ? (
+                                  <p className="ficha-grupo-empty">No hay asistencias registradas.</p>
+                                ) : (
+                                  <>
+                                    <ul className="ficha-asistencias-list">
+                                      {fichaAsistencias.map((a) => (
+                                        <li key={a.id} className="ficha-asistencia-card">
+                                          <div className="ficha-asistencia-info">
+                                            <span className="ficha-asistencia-fecha">
+                                              {a.createdAt ? new Date(a.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
+                                            </span>
+                                            {Object.entries(a.camposDinamicos || {}).map(([k, v]) => (
+                                              v != null && v !== '' && <span key={k} className="ficha-asistencia-campo">{k}: {String(v)}</span>
+                                            ))}
+                                          </div>
+                                          {isDsAdmin && (
+                                            <button
+                                              type="button"
+                                              className="ficha-grupo-btn ficha-grupo-btn-desvincular"
+                                              onClick={() => eliminarAsistencia(a)}
+                                              disabled={fichaAsistenciaDeleting === a.id}
+                                              title="Eliminar"
+                                            >
+                                              {fichaAsistenciaDeleting === a.id ? '...' : 'Eliminar'}
+                                            </button>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    {(fichaAsistenciasMeta && fichaAsistenciasMeta.last_page > 1) && (
+                                  <div className="ficha-asistencias-paginacion">
+                                    <button
+                                      type="button"
+                                      className="ficha-pag-btn"
+                                      disabled={fichaAsistenciasPage <= 1}
+                                      onClick={() => { setFichaAsistenciasPage((p) => Math.max(1, p - 1)); }}
+                                    >
+                                      ← Anterior
+                                    </button>
+                                    <span className="ficha-pag-info">
+                                      Pág. {fichaAsistenciasPage} de {fichaAsistenciasMeta.last_page} ({fichaAsistenciasMeta.total} total)
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="ficha-pag-btn"
+                                      disabled={fichaAsistenciasPage >= fichaAsistenciasMeta.last_page}
+                                      onClick={() => { setFichaAsistenciasPage((p) => Math.min(fichaAsistenciasMeta.last_page, p + 1)); }}
+                                    >
+                                      Siguiente →
+                                    </button>
                                     </div>
-                                    {isDsAdmin && (
-                                      <button
-                                        type="button"
-                                        className="ficha-grupo-btn ficha-grupo-btn-desvincular"
-                                        onClick={() => eliminarAsistencia(a)}
-                                        disabled={fichaAsistenciaDeleting === a.id}
-                                        title="Eliminar"
-                                      >
-                                        {fichaAsistenciaDeleting === a.id ? '...' : 'Eliminar'}
-                                      </button>
                                     )}
-                                  </li>
-                                ))}
-                              </ul>
+                                  </>
+                                )}
+                              </>
                             )}
                           </section>
                         )}
@@ -1458,6 +1831,7 @@ export default function EncuestasSocialesPage() {
                                               <line x1="10" y1="14" x2="21" y2="3" />
                                             </svg>
                                           </button>
+                                          {isDsAdmin && (
                                           <button
                                             type="button"
                                             className="ficha-doc-accion-icon ficha-doc-accion-icon--delete"
@@ -1476,6 +1850,7 @@ export default function EncuestasSocialesPage() {
                                               </svg>
                                             )}
                                           </button>
+                                          )}
                                         </div>
                                       </li>
                                     ))}

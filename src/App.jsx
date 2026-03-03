@@ -1,6 +1,25 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { Toaster } from 'sileo';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
+/** Ruta solo accesible por ADMIN o SUPERADMIN en Desarrollo Social. Redirige a encuestas si es USER. */
+function DsAdminRoute({ children }) {
+  const { user, systems } = useAuth();
+  const desarrolloSocialSystem = systems?.find((s) => s.modules?.some((m) => m.route === '/desarrollo-social/encuestas'));
+  const isDsAdmin = user?.globalRole === 'SUPERADMIN' || desarrolloSocialSystem?.role === 'ADMIN';
+  if (!isDsAdmin) return <Navigate to="/desarrollo-social/encuestas" replace />;
+  return children;
+}
+
+/** Ruta solo accesible por ADMIN o SUPERADMIN del sistema. Redirige al inicio del sistema si es USER. */
+function SistemaAdminRoute({ children }) {
+  const { id: sistemaId } = useParams();
+  const { user, systems } = useAuth();
+  const sistemaSystem = systems?.find((s) => s.id === sistemaId);
+  const isSistemaAdmin = user?.globalRole === 'SUPERADMIN' || sistemaSystem?.role === 'ADMIN';
+  if (!isSistemaAdmin) return <Navigate to={sistemaId ? `/sistema/${sistemaId}` : '/sistemas'} replace />;
+  return children;
+}
 import { SettingsProvider } from './context/SettingsContext';
 import LoginPage from './pages/LoginPage';
 import SistemasPage from './pages/SistemasPage';
@@ -59,22 +78,22 @@ export default function App() {
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/sistemas" element={<ProtectedRoute><SistemasPage /></ProtectedRoute>} />
           <Route path="/sistema/:id" element={<ProtectedRoute><SistemaPage /></ProtectedRoute>} />
-          <Route path="/sistema/:id/auditoria" element={<ProtectedRoute><AuditoriaSistemaPage /></ProtectedRoute>} />
-          <Route path="/sistema/:id/backup" element={<ProtectedRoute><BackupPage /></ProtectedRoute>} />
+          <Route path="/sistema/:id/auditoria" element={<ProtectedRoute><SistemaAdminRoute><AuditoriaSistemaPage /></SistemaAdminRoute></ProtectedRoute>} />
+          <Route path="/sistema/:id/backup" element={<ProtectedRoute><SistemaAdminRoute><BackupPage /></SistemaAdminRoute></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/sistemas" replace />} />
           <Route path="/documentos" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/desarrollo-social" element={<ProtectedRoute><DesarrolloSocialPage /></ProtectedRoute>} />
           <Route path="/desarrollo-social/encuestas" element={<ProtectedRoute><EncuestasSocialesPage /></ProtectedRoute>} />
           <Route path="/desarrollo-social/encuestas/nueva" element={<ProtectedRoute><NuevaEncuestaWizardPage /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/estadisticas" element={<ProtectedRoute><EstadisticasDesarrolloSocialPage /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/auditoria" element={<ProtectedRoute><AuditoriaDesarrolloSocialPage /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/campos-dinamicos" element={<ProtectedRoute><CamposDinamicosPage desarrolloSocial /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/calles" element={<ProtectedRoute><CallesPage desarrolloSocial /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/barrios" element={<ProtectedRoute><BarriosPage desarrolloSocial /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/niveles-educativos" element={<ProtectedRoute><NivelesEducativosPage desarrolloSocial /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/instituciones-educativas" element={<ProtectedRoute><InstitucionesEducativasPage desarrolloSocial /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/nacionalidades" element={<ProtectedRoute><NacionalidadesPage desarrolloSocial /></ProtectedRoute>} />
-          <Route path="/desarrollo-social/config/ciudades" element={<ProtectedRoute><CiudadesPage desarrolloSocial /></ProtectedRoute>} />
+          <Route path="/desarrollo-social/estadisticas" element={<ProtectedRoute><DsAdminRoute><EstadisticasDesarrolloSocialPage /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/auditoria" element={<ProtectedRoute><DsAdminRoute><AuditoriaDesarrolloSocialPage /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/campos-dinamicos" element={<ProtectedRoute><DsAdminRoute><CamposDinamicosPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/calles" element={<ProtectedRoute><DsAdminRoute><CallesPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/barrios" element={<ProtectedRoute><DsAdminRoute><BarriosPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/niveles-educativos" element={<ProtectedRoute><DsAdminRoute><NivelesEducativosPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/instituciones-educativas" element={<ProtectedRoute><DsAdminRoute><InstitucionesEducativasPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/nacionalidades" element={<ProtectedRoute><DsAdminRoute><NacionalidadesPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
+          <Route path="/desarrollo-social/config/ciudades" element={<ProtectedRoute><DsAdminRoute><CiudadesPage desarrolloSocial /></DsAdminRoute></ProtectedRoute>} />
           <Route path="/admin/usuarios" element={<ProtectedRoute><AdminUsuariosPage /></ProtectedRoute>} />
           <Route path="/admin/auditoria" element={<ProtectedRoute><AuditoriaPage /></ProtectedRoute>} />
           <Route path="/admin/backup" element={<ProtectedRoute><BackupPage /></ProtectedRoute>} />
