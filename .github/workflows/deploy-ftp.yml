@@ -1,0 +1,38 @@
+# Requiere estos Secrets en GitHub: Settings → Secrets and variables → Actions
+# - FTP_SERVER: host del servidor FTP (ej: ftp.ejemplo.com)
+# - FTP_USERNAME: usuario FTP
+# - FTP_PASSWORD: contraseña FTP
+# - FTP_SERVER_DIR: ruta remota (ej: public_html/ o nuevo.desarrollosocial.montehermoso.gov.ar/)
+name: Build y deploy FTP
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy por FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
