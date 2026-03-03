@@ -1,8 +1,10 @@
 # Requiere estos Secrets en GitHub: Settings → Secrets and variables → Actions
-# - FTP_SERVER: host del servidor FTP (ej: ftp.ejemplo.com)
+# - FTP_SERVER: SOLO hostname sin protocolo (ej: ftp.ejemplo.com) - NO usar ftp:// ni https://
 # - FTP_USERNAME: usuario FTP
 # - FTP_PASSWORD: contraseña FTP
-# - FTP_SERVER_DIR: ruta remota (ej: public_html/ o nuevo.desarrollosocial.montehermoso.gov.ar/)
+# - FTP_SERVER_DIR: ruta remota (ej: public_html/) - terminar con /
+# Opcionales: FTP_PROTOCOL (ftp o ftps), FTP_PORT (21 o 990 para FTPS)
+# Si tu host solo soporta SFTP, necesitás un workflow distinto (SFTP).
 name: Build y deploy FTP
 
 on:
@@ -27,6 +29,19 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Validar FTP_SERVER
+        run: |
+          SERVER="${{ secrets.FTP_SERVER }}"
+          if [[ "$SERVER" == *"://"* ]]; then
+            echo "::error::FTP_SERVER debe ser SOLO el hostname (ej: ftp.ejemplo.com). No incluyas ftp:// ni https://"
+            exit 1
+          fi
+          if [[ "$SERVER" == *"/"* ]]; then
+            echo "::error::FTP_SERVER no debe tener barras. Solo el host: ftp.ejemplo.com"
+            exit 1
+          fi
+          echo "Formato OK. Conectando a $SERVER..."
 
       - name: Deploy por FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
