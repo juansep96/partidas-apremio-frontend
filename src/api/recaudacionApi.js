@@ -46,6 +46,27 @@ export const legajoApi = {
   finalizar: (id, data) => apiRequest(`/pj/legajos/${id}/finalizar`, { method: 'POST', body: JSON.stringify(data) }),
   confirmarDesbloqueo: (id, data) => apiRequest(`/pj/legajos/${id}/confirmar-desbloqueo`, { method: 'POST', body: JSON.stringify(data) }),
   subirAcuse: (id, formData) => fetchFormData(`/pj/legajos/${id}/acuse`, formData),
+  downloadCartaDocumento: async (id) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE}/pj/legajos/${id}/carta-documento`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('systems');
+      window.location.href = `${BASE_PATH}/login`;
+      throw new Error('Sesión expirada');
+    }
+    if (!res.ok) throw new Error('Error al generar carta documento');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `carta-documento-${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 export const loteApi = {

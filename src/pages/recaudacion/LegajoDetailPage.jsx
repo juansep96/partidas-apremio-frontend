@@ -250,6 +250,7 @@ export default function LegajoDetailPage() {
     : null;
 
   // Role-based actions
+  const canGenerarCartaDocumento = isSuperAdmin || pjRole === 'Recaudacion';
   const canCargarAcuse = (isSuperAdmin || pjRole === 'Recaudacion') && estado === 'en_intimacion';
   const canMarcarApremio = (isSuperAdmin || pjRole === 'Sistemas') && ['notificada', 'rechazada'].includes(estado);
   const canAsignarAbogado = (isSuperAdmin || pjRole === 'SecretarioLegal') && estado === 'marcada_apremio';
@@ -259,8 +260,8 @@ export default function LegajoDetailPage() {
   const canSubirCdc = (isSuperAdmin || pjRole === 'Sistemas') && estado === 'en_juicio';
   const canConfirmarDesbloqueo = (isSuperAdmin || pjRole === 'Sistemas') && estado === 'finalizada';
 
-  const hasActions = canCargarAcuse || canMarcarApremio || canAsignarAbogado || canIniciarJuicio ||
-    canAmpliarDemanda || canFinalizar || canSubirCdc || canConfirmarDesbloqueo;
+  const hasActions = canGenerarCartaDocumento || canCargarAcuse || canMarcarApremio || canAsignarAbogado ||
+    canIniciarJuicio || canAmpliarDemanda || canFinalizar || canSubirCdc || canConfirmarDesbloqueo;
 
   return (
     <AppLayout>
@@ -387,6 +388,27 @@ export default function LegajoDetailPage() {
 
           {hasActions ? (
             <div className="pj-det-actions-grid">
+              {canGenerarCartaDocumento && (
+                <button
+                  type="button"
+                  className="pj-det-action-btn pj-det-action-btn--ghost"
+                  disabled={saving}
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      await legajoApi.downloadCartaDocumento(id);
+                    } catch (err) {
+                      sileo.error({ title: 'Error', description: err.message });
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  <span className="pj-det-action-icon">📄</span>
+                  <span className="pj-det-action-label">Generar Carta Documento</span>
+                  <span className="pj-det-action-desc">Descargar PDF triplicado</span>
+                </button>
+              )}
               {canCargarAcuse && (
                 <button type="button" className="pj-det-action-btn pj-det-action-btn--primary" onClick={() => openModal('acuse')}>
                   <span className="pj-det-action-icon">📋</span>
