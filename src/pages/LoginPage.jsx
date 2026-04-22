@@ -7,6 +7,13 @@ import './LoginPage.css';
 
 const LOGO_URL = '/logo.png';
 
+const MOCK_AUTH = import.meta.env.VITE_MOCK_AUTH === 'true';
+const MOCK_DATA = {
+  token: 'mock-token-demo',
+  user: { id: 1, name: 'Usuario Demo', globalRole: 'SUPERADMIN' },
+  systems: [],
+};
+
 // Imágenes de Monte Hermoso, Buenos Aires, Argentina (reemplazables por fotos oficiales)
 const MONTE_HERMOSO_IMAGES = [
   'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/11/e2/23/1c/img-20171231-201032060.jpg', // playa
@@ -38,9 +45,26 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, [shuffledImages.length]);
 
+  useEffect(() => {
+    if (!MOCK_AUTH || step !== 2) return;
+    const t = setTimeout(() => {
+      login(MOCK_DATA);
+      sileo.success({ title: '¡Bienvenido!' });
+      navigate('/recaudacion');
+    }, 600);
+    return () => clearTimeout(t);
+  }, [step]);
+
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     const dniClean = dni.replace(/\D/g, '');
+
+    if (MOCK_AUTH) {
+      setStep(2);
+      setCode('123456');
+      return;
+    }
+
     setLoading(true);
 
     // UI optimista: mostramos el paso del código de inmediato para no bloquear esperando el envío del email
@@ -74,6 +98,12 @@ export default function LoginPage() {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (MOCK_AUTH) {
+      login(MOCK_DATA);
+      sileo.success({ title: '¡Bienvenido!' });
+      navigate('/recaudacion');
+      return;
+    }
     setLoading(true);
     try {
       const res = await authApi.verifyOtp(dni.replace(/\D/g, ''), code);
@@ -86,7 +116,7 @@ export default function LoginPage() {
         } else if (syss.length === 1 && syss[0].modules?.length > 1) {
           navigate(`/sistema/${syss[0].id}`);
         } else {
-          navigate('/sistemas');
+          navigate('/recaudacion');
         }
       } else {
         sileo.error({
@@ -126,9 +156,8 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="login-brand-copy">
-            <h2>Secretaría de Desarrollo Humano y Social</h2>
-            <h3>Subsecretaría de Desarrollo Humano y Social</h3>
-            <h3>Subsecretaría de Desarrollo Humano, Mujer, Género y Diversidades</h3>
+            <h2>Dirección de Recaudación Municipal</h2>
+            <h3>Asesoría Letrada</h3>
           </div>
           <div className="login-brand-footer">© {new Date().getFullYear()} Municipalidad de Monte Hermoso · Uso interno</div>
         </div>

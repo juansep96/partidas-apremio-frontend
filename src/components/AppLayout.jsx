@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
-import AssistantBot from './AssistantBot';
+import AlertasBell from './recaudacion/AlertasBell';
 import './AppLayout.css';
 
 function ConfigIcon() {
@@ -31,67 +31,34 @@ function useLiveClock() {
   return now;
 }
 
-const DESARROLLO_SOCIAL_ROUTE = '/desarrollo-social';
-/** Ruta del módulo DS en la base de datos (puede diferir de la ruta base de la app). */
-const DESARROLLO_SOCIAL_MODULE_ROUTE = '/desarrollo-social/encuestas';
-
-const configSubItemsAdmin = [
-  { to: '/admin/campos-dinamicos', label: 'Campos dinámicos' },
-  { to: '/admin/calles', label: 'Calles' },
-  { to: '/admin/barrios', label: 'Barrios' },
-  { to: '/admin/niveles-educativos', label: 'Niveles educativos' },
-  { to: '/admin/instituciones-educativas', label: 'Instituciones educativas' },
-  { to: '/admin/nacionalidades', label: 'Nacionalidades' },
-  { to: '/admin/ciudades', label: 'Ciudades' },
-];
-
-const configSubItemsDs = [
-  { to: '/desarrollo-social/config/campos-dinamicos', label: 'Campos dinámicos' },
-  { to: '/desarrollo-social/config/calles', label: 'Calles' },
-  { to: '/desarrollo-social/config/barrios', label: 'Barrios' },
-  { to: '/desarrollo-social/config/niveles-educativos', label: 'Niveles educativos' },
-  { to: '/desarrollo-social/config/instituciones-educativas', label: 'Instituciones educativas' },
-  { to: '/desarrollo-social/config/nacionalidades', label: 'Nacionalidades' },
-  { to: '/desarrollo-social/config/ciudades', label: 'Ciudades' },
-];
-
 export default function AppLayout({ children }) {
   const { user, systems, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const now = useLiveClock();
   const [configOpen, setConfigOpen] = useState(false);
-  const [configMenuOpen, setConfigMenuOpen] = useState(false);
-  const [dsConfigMenuOpen, setDsConfigMenuOpen] = useState(false);
   const settings = useSettings();
 
   const { id: sistemaId } = useParams();
   const isSistemaContext = location.pathname.startsWith('/sistema/') && sistemaId;
   const sistemaSystem = systems?.find((s) => s.id === sistemaId);
   const isSistemaAdmin = user?.globalRole === 'SUPERADMIN' || sistemaSystem?.role === 'ADMIN';
-  const isDesarrolloSocialContext = location.pathname.startsWith(DESARROLLO_SOCIAL_ROUTE);
-  const desarrolloSocialSystem = systems?.find((s) => s.modules?.some((m) => m.route === DESARROLLO_SOCIAL_MODULE_ROUTE));
-  const isDsAdmin = user?.globalRole === 'SUPERADMIN' || desarrolloSocialSystem?.role === 'ADMIN';
+  const isRecaudacionContext = location.pathname.startsWith('/recaudacion');
+  const recSystem = systems?.find(s => s.modules?.some(m => m.route === '/recaudacion'));
+  const recRole = recSystem?.role;
+  const isSuperAdmin = user?.globalRole === 'SUPERADMIN';
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Usuario';
   const role = formatRole(user?.globalRole);
   const initial = (user?.lastName?.[0] || user?.firstName?.[0] || 'U').toUpperCase();
 
   useEffect(() => {
-    if (!configOpen && !configMenuOpen && !dsConfigMenuOpen) return;
+    if (!configOpen) return;
     const onEscape = (e) => {
-      if (e.key === 'Escape') {
-        setConfigOpen(false);
-        setConfigMenuOpen(false);
-        setDsConfigMenuOpen(false);
-      }
+      if (e.key === 'Escape') setConfigOpen(false);
     };
     const onClickOutside = (e) => {
       if (e.target.closest('.app-config-panel') == null && e.target.closest('.app-config-btn') == null) setConfigOpen(false);
-      if (e.target.closest('.app-config-menu-panel') == null && e.target.closest('.app-config-menu-btn') == null) {
-        setConfigMenuOpen(false);
-        setDsConfigMenuOpen(false);
-      }
     };
     document.addEventListener('keydown', onEscape);
     document.addEventListener('click', onClickOutside);
@@ -99,7 +66,7 @@ export default function AppLayout({ children }) {
       document.removeEventListener('keydown', onEscape);
       document.removeEventListener('click', onClickOutside);
     };
-  }, [configOpen, configMenuOpen, dsConfigMenuOpen]);
+  }, [configOpen]);
 
   return (
     <div className="app-layout">
@@ -111,71 +78,59 @@ export default function AppLayout({ children }) {
             type="button"
             aria-label="Ir a inicio"
           >
-            <img src={LOGO_URL} alt="SIDESO" className="app-logo-img" />
+            <img src={LOGO_URL} alt="MMH" className="app-logo-img" />
           </button>
 
           <nav className="app-nav">
-            {isDesarrolloSocialContext ? (
+            {isRecaudacionContext ? (
               <>
-                <NavLink
-                  to={desarrolloSocialSystem?.id ? `/sistema/${desarrolloSocialSystem.id}` : '/sistemas'}
-                  className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}
-                  end
-                >
-                  Inicio
+                <NavLink to="/recaudacion" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`} end>
+                  Dashboard
                 </NavLink>
-                <NavLink
-                  to={`${DESARROLLO_SOCIAL_ROUTE}/encuestas`}
-                  className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}
-                >
-                  Encuestas Sociales
+                <NavLink to="/recaudacion/partidas" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Legajos
                 </NavLink>
-                {isDsAdmin ? (
-                  <NavLink
-                    to={`${DESARROLLO_SOCIAL_ROUTE}/estadisticas`}
-                    className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}
-                  >
-                    Estadísticas
+                {(isSuperAdmin || ['Recaudacion', 'Sistemas'].includes(recRole)) && (
+                  <NavLink to="/recaudacion/intimaciones" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                    Intimaci&#243;n
                   </NavLink>
-                ) : (
-                  <span className="app-nav-link app-nav-link-disabled" inert>Estadísticas</span>
                 )}
-                {isDsAdmin ? (
-                  <NavLink to="/desarrollo-social/auditoria" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
-                    Auditoría
+                {(isSuperAdmin || recRole === 'SecretarioLegal') && (
+                  <NavLink to="/recaudacion/bandeja-secretario" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                    Bandeja Legal
                   </NavLink>
-                ) : (
-                  <span className="app-nav-link app-nav-link-disabled" inert>Auditoría</span>
                 )}
-                {isDsAdmin ? (
-                  <div className="app-config-menu-wrap">
-                    <button
-                      type="button"
-                      className={`app-config-menu-btn app-nav-link ${dsConfigMenuOpen ? 'active' : ''}`}
-                      onClick={() => setDsConfigMenuOpen((v) => !v)}
-                      aria-expanded={dsConfigMenuOpen}
-                      aria-haspopup="true"
-                    >
-                      Configuraciones
-                    </button>
-                    {dsConfigMenuOpen && (
-                      <div className="app-config-menu-panel" role="menu">
-                        {configSubItemsDs.map(({ to, label }) => (
-                          <NavLink
-                            key={to}
-                            to={to}
-                            className={({ isActive }) => `app-config-menu-item ${isActive ? 'active' : ''}`}
-                            onClick={() => setDsConfigMenuOpen(false)}
-                          >
-                            {label}
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className="app-nav-link app-nav-link-disabled" inert>Configuraciones</span>
+                {(isSuperAdmin || recRole === 'Abogado') && (
+                  <NavLink to="/recaudacion/bandeja-abogado" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                    Mis Casos
+                  </NavLink>
                 )}
+                {(isSuperAdmin || ['Recaudacion', 'Sistemas', 'SecretarioLegal', 'ObservadorGlobal'].includes(recRole)) && (
+                  <NavLink to="/recaudacion/estadisticas" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                    Estad&#237;sticas
+                  </NavLink>
+                )}
+              </>
+            ) : isRecaudacionContext ? (
+              <>
+                <NavLink to="/recaudacion" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`} end>
+                  Dashboard
+                </NavLink>
+                <NavLink to="/recaudacion/partidas" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Partidas
+                </NavLink>
+                <NavLink to="/recaudacion/bandeja-secretario" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Bandeja Secretario
+                </NavLink>
+                <NavLink to="/recaudacion/bandeja-abogado" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Bandeja Abogado
+                </NavLink>
+                <NavLink to="/recaudacion/intimaciones" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Intimaciones
+                </NavLink>
+                <NavLink to="/recaudacion/estadisticas" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Estad&#237;sticas
+                </NavLink>
               </>
             ) : isSistemaContext ? (
               <>
@@ -187,18 +142,10 @@ export default function AppLayout({ children }) {
                     to={`/sistema/${sistemaId}/auditoria`}
                     className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}
                   >
-                    Auditoría
+                    Auditor&#237;a
                   </NavLink>
                 ) : (
-                  <span className="app-nav-link app-nav-link-disabled" inert>Auditoría</span>
-                )}
-                {user?.globalRole === 'SUPERADMIN' && (
-                  <NavLink
-                    to={`/sistema/${sistemaId}/backup`}
-                    className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}
-                  >
-                    Copia de seguridad
-                  </NavLink>
+                  <span className="app-nav-link app-nav-link-disabled" inert>Auditor&#237;a</span>
                 )}
               </>
             ) : (
@@ -213,52 +160,8 @@ export default function AppLayout({ children }) {
                 )}
                 {user?.globalRole === 'SUPERADMIN' && (
                   <NavLink to="/admin/auditoria" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
-                    Auditoría
+                    Auditor&#237;a
                   </NavLink>
-                )}
-                {user?.globalRole === 'SUPERADMIN' && (
-                  <NavLink to="/admin/backup" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
-                    Copia de seguridad
-                  </NavLink>
-                )}
-                {user?.globalRole === 'SUPERADMIN' && (
-                  <NavLink to="/admin/personas" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
-                    Personas
-                  </NavLink>
-                )}
-                {user?.globalRole === 'SUPERADMIN' && (
-                  <div className="app-config-menu-wrap">
-                    <button
-                      type="button"
-                      className={`app-config-menu-btn app-nav-link ${configMenuOpen ? 'active' : ''}`}
-                      onClick={() => setConfigMenuOpen((v) => !v)}
-                      aria-expanded={configMenuOpen}
-                      aria-haspopup="true"
-                    >
-                      Configuraciones
-                    </button>
-                    {configMenuOpen && (
-                      <div className="app-config-menu-panel" role="menu">
-                        <NavLink
-                          to="/admin/empleados"
-                          className={({ isActive }) => `app-config-menu-item ${isActive ? 'active' : ''}`}
-                          onClick={() => setConfigMenuOpen(false)}
-                        >
-                          Empleados Municipales
-                        </NavLink>
-                        {configSubItemsAdmin.map(({ to, label }) => (
-                          <NavLink
-                            key={to}
-                            to={to}
-                            className={({ isActive }) => `app-config-menu-item ${isActive ? 'active' : ''}`}
-                            onClick={() => setConfigMenuOpen(false)}
-                          >
-                            {label}
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 )}
               </>
             )}
@@ -266,28 +169,29 @@ export default function AppLayout({ children }) {
         </div>
 
         <div className="app-navbar-right">
+          {isRecaudacionContext && <AlertasBell />}
           <div className="app-config-wrap">
             <button
               type="button"
               className="app-config-btn"
               onClick={() => setConfigOpen((v) => !v)}
-              aria-label="Configuración"
+              aria-label="Configuraci&#243;n"
               aria-expanded={configOpen}
             >
               <ConfigIcon />
             </button>
             {configOpen && settings && (
-              <div className="app-config-panel" role="dialog" aria-label="Configuración">
-                <div className="app-config-title">Tamaño de fuente</div>
+              <div className="app-config-panel" role="dialog" aria-label="Configuraci&#243;n">
+                <div className="app-config-title">Tama&#241;o de fuente</div>
                 <div className="app-config-font-controls">
                   <button
                     type="button"
                     className="app-config-font-btn"
                     onClick={settings.decreaseFontSize}
                     disabled={!settings.canDecrease}
-                    aria-label="Disminuir tamaño"
+                    aria-label="Disminuir tama&#241;o"
                   >
-                    −
+                    &#8722;
                   </button>
                   <span className="app-config-font-label">{settings.fontScaleLabel}</span>
                   <button
@@ -295,7 +199,7 @@ export default function AppLayout({ children }) {
                     className="app-config-font-btn"
                     onClick={settings.increaseFontSize}
                     disabled={!settings.canIncrease}
-                    aria-label="Aumentar tamaño"
+                    aria-label="Aumentar tama&#241;o"
                   >
                     +
                   </button>
@@ -336,8 +240,6 @@ export default function AppLayout({ children }) {
       <main className="app-main">
         {children}
       </main>
-
-      <AssistantBot />
     </div>
   );
 }

@@ -1,0 +1,360 @@
+.pj-intimacion-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pj-intimacion-hero {
+  margin-bottom: 1.75rem;
+}
+
+.pj-intimacion-hero h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.pj-intimacion-hero p {
+  font-size: 0.9375rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.pj-intimacion-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .pj-intimacion-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pj-filters-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.pj-filters-header {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pj-filters-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pj-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.pj-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pj-filter-field label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.pj-filter-field input,
+.pj-filter-field select {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: white;
+}
+
+.pj-filter-field input:focus,
+.pj-filter-field select:focus {
+  outline: none;
+  border-color: #015a6a;
+  box-shadow: 0 0 0 2px rgba(1,90,106,0.1);
+}
+
+.pj-filters-footer {
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pj-results-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.pj-results-header {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pj-results-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pj-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pj-table th {
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pj-table th:first-child {
+  padding-left: 1rem;
+  width: 2.5rem;
+}
+
+.pj-table td {
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.pj-table td:first-child {
+  padding-left: 1rem;
+}
+
+.pj-table tr:last-child td {
+  border-bottom: none;
+}
+
+.pj-table tr:hover td {
+  background: #f8fafc;
+}
+
+.pj-results-footer {
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 0.875rem;
+  color: #475569;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pj-results-footer strong {
+  color: #0f172a;
+}
+
+/* Sidebar */
+.pj-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.pj-sidebar-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pj-sidebar-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.5rem;
+}
+
+/* Success banner */
+.pj-success-banner {
+  padding: 1rem 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.pj-success-banner-text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #14532d;
+}
+
+.pj-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.pj-btn--primary {
+  background: #015a6a;
+  color: white;
+}
+
+.pj-btn--primary:hover {
+  background: #027381;
+}
+
+.pj-btn--ghost {
+  background: transparent;
+  color: #015a6a;
+  border: 1px solid #015a6a;
+}
+
+.pj-btn--ghost:hover {
+  background: #015a6a;
+  color: white;
+}
+
+.pj-btn--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.pj-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pj-loading, .pj-error, .pj-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9375rem;
+}
+
+.pj-error {
+  color: #ef4444;
+}
+
+/* Modal overlay */
+.pj-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 1rem;
+}
+
+.pj-modal {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.pj-modal h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1.25rem 0;
+}
+
+.pj-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.pj-modal-field label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.pj-modal-field input,
+.pj-modal-field select,
+.pj-modal-field textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  background: white;
+}
+
+.pj-modal-field input:focus,
+.pj-modal-field select:focus,
+.pj-modal-field textarea:focus {
+  outline: none;
+  border-color: #015a6a;
+  box-shadow: 0 0 0 3px rgba(1,90,106,0.1);
+}
+
+.pj-modal-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.pj-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

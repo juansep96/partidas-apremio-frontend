@@ -2,7 +2,7 @@
 # - FTP_SERVER: SOLO hostname sin protocolo (ej: ftp.ejemplo.com) - NO usar ftp:// ni https://
 # - FTP_USERNAME: usuario FTP
 # - FTP_PASSWORD: contraseña FTP
-# - FTP_SERVER_DIR: ruta remota (ej: public_html/) - terminar con /
+# - FTP_SERVER_DIR: ruta remota a la carpeta 'nuevo' (ej: public_html/nuevo/) - terminar con /
 # Opcionales: FTP_PROTOCOL (ftp o ftps), FTP_PORT (21 o 990 para FTPS)
 # Si tu host solo soporta SFTP, necesitás un workflow distinto (SFTP).
 name: Build y deploy FTP

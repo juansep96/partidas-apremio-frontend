@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AppLayout from '../components/AppLayout';
 import SelectSearchable from '../components/SelectSearchable';
-import { usersApi, empleadosApi } from '../api/client';
+import { usersApi } from '../api/client';
 import { sileo } from 'sileo';
 import './AdminUsuariosPage.css';
 
@@ -183,7 +183,7 @@ export default function AdminUsuariosPage() {
     }
     setSearchingEmpleado(true);
     try {
-      const res = await empleadosApi.findByDni(dni);
+      const res = { empleado: null };
       if (res?.empleado) {
         const emp = res.empleado;
         setFormData((d) => ({

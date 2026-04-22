@@ -1,0 +1,82 @@
+.pj-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pj-timeline-empty {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.pj-timeline-item {
+  display: flex;
+  gap: 1rem;
+  position: relative;
+}
+
+.pj-timeline-item:not(:last-child) .pj-timeline-line {
+  position: absolute;
+  left: 0.5rem;
+  top: 1.5rem;
+  bottom: -0.5rem;
+  width: 2px;
+  background: #e2e8f0;
+  transform: translateX(-50%);
+}
+
+.pj-timeline-dot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 1rem;
+  padding-top: 0.25rem;
+}
+
+.pj-timeline-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: #015a6a;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #015a6a;
+  flex-shrink: 0;
+}
+
+.pj-timeline-dot--first {
+  background: #027381;
+  box-shadow: 0 0 0 2px #027381;
+}
+
+.pj-timeline-body {
+  flex: 1;
+  padding-bottom: 1.25rem;
+}
+
+.pj-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.125rem;
+}
+
+.pj-timeline-arrow {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.pj-timeline-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.125rem;
+}
+
+.pj-timeline-meta span {
+  font-weight: 600;
+  color: #64748b;
+}
