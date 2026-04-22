@@ -252,7 +252,7 @@ export default function LegajoDetailPage() {
   // Role-based actions
   const canGenerarCartaDocumento = isSuperAdmin || pjRole === 'Recaudacion';
   const canCargarAcuse = (isSuperAdmin || pjRole === 'Recaudacion') && estado === 'en_intimacion';
-  const canMarcarApremio = (isSuperAdmin || pjRole === 'Sistemas') && ['notificada', 'rechazada'].includes(estado);
+  const canMarcarApremio = (isSuperAdmin || pjRole === 'Recaudacion') && ['notificada', 'rechazada'].includes(estado);
   const canAsignarAbogado = (isSuperAdmin || pjRole === 'SecretarioLegal') && estado === 'marcada_apremio';
   const canIniciarJuicio = (isSuperAdmin || pjRole === 'Abogado') && estado === 'asignada_legales';
   const canAmpliarDemanda = (isSuperAdmin || pjRole === 'Abogado') && estado === 'en_juicio';
