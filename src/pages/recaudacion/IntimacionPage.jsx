@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { sileo } from 'sileo';
+import * as XLSX from 'xlsx';
 import AppLayout from '../../components/AppLayout';
 import { partidaApi, loteApi } from '../../api/recaudacionApi';
 import './IntimacionPage.css';
@@ -17,31 +18,22 @@ const MOTIVOS_EXCLUSION = [
   { value: 'otro',            label: 'Otro' },
 ];
 
-function exportarCSV(resultados) {
-  const headers = ['Nro Partida', 'Titular', 'DNI', 'Domicilio', 'Zona', 'CP', 'Capital', 'Intereses', 'Cuotas'];
-  const rows = resultados.map(r => [
-    r.nro_partida || r.id,
-    r.titular || '',
-    r.titular_dni || '',
-    r.titular_domicilio || '',
-    r.zona || '',
-    r.codigo_postal || '',
-    r.monto_capital || 0,
-    r.monto_intereses || 0,
-    r.cuotas_adeudadas || 0,
-  ]);
-  const csv = [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-    .join('\r\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `preview-intimacion-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+function exportarExcel(resultados) {
+  const rows = resultados.map(r => ({
+    'Nro Partida':  r.nro_partida || r.id,
+    'Titular':      r.titular || '',
+    'DNI':          r.titular_dni || '',
+    'Domicilio':    r.titular_domicilio || '',
+    'Zona':         r.zona || '',
+    'CP':           r.codigo_postal || '',
+    'Capital':      r.monto_capital || 0,
+    'Intereses':    r.monto_intereses || 0,
+    'Cuotas':       r.cuotas_adeudadas || 0,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Intimaciones');
+  XLSX.writeFile(wb, `preview-intimacion-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 export default function IntimacionPage() {
@@ -259,9 +251,9 @@ export default function IntimacionPage() {
                     <button
                       type="button"
                       className="pj-btn pj-btn--ghost pj-btn--sm"
-                      onClick={() => exportarCSV(resultados)}
+                      onClick={() => exportarExcel(resultados)}
                     >
-                      Exportar Excel (CSV)
+                      Exportar Excel
                     </button>
                   )}
                 </div>
