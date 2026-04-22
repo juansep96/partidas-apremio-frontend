@@ -158,7 +158,7 @@ export default function IntimacionPage() {
             <button
               type="button"
               className="pj-btn pj-btn--primary pj-btn--sm"
-              onClick={() => window.open(loteApi.getPdfUrl(loteGenerado.id), '_blank')}
+              onClick={() => loteApi.download(loteGenerado.id)}
             >
               Descargar PDF
             </button>

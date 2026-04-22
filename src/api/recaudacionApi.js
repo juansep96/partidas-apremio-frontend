@@ -51,7 +51,27 @@ export const legajoApi = {
 export const loteApi = {
   list: (params = {}) => apiRequest(`/pj/lotes-intimacion?${new URLSearchParams(params)}`),
   create: (data) => apiRequest('/pj/lotes-intimacion', { method: 'POST', body: JSON.stringify(data) }),
-  getPdfUrl: (id) => `${API_BASE}/pj/lotes-intimacion/${id}/pdf`,
+  download: async (id) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE}/pj/lotes-intimacion/${id}/pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('systems');
+      window.location.href = `${BASE_PATH}/login`;
+      throw new Error('Sesión expirada');
+    }
+    if (!res.ok) throw new Error('Error al descargar');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lote-intimacion-${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 export const cdcApi = {
