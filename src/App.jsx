@@ -71,6 +71,13 @@ function PublicRoute({ children }) {
   return children;
 }
 
+// El asistente solo se muestra con sesión iniciada (nunca en /login)
+function AuthedChatbot() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return <ChatbotWidget />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -100,7 +107,7 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/recaudacion" replace />} />
           </Routes>
-          <ChatbotWidget />
+          <AuthedChatbot />
         </BrowserRouter>
       </SettingsProvider>
     </AuthProvider>
