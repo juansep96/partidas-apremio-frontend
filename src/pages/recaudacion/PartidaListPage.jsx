@@ -4,7 +4,7 @@ import { sileo } from 'sileo';
 import AppLayout from '../../components/AppLayout';
 import EstadoBadge from '../../components/recaudacion/EstadoBadge';
 import { useAuth } from '../../context/AuthContext';
-import { legajoApi, partidaApi } from '../../api/recaudacionApi';
+import { legajoApi, partidaApi, padronApi } from '../../api/recaudacionApi';
 import './PartidaListPage.css';
 
 function formatMonto(n) {
@@ -150,6 +150,17 @@ export default function PartidaListPage() {
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef(null);
+  // Padrón: 'upload' -> seleccionar archivo; 'preview' -> mostrar diff y confirmar
+  const [padronStep, setPadronStep] = useState('upload');
+  const [padronDiff, setPadronDiff] = useState(null);
+
+  const resetPadron = () => {
+    setImportModal(false);
+    setImportFile(null);
+    setPadronStep('upload');
+    setPadronDiff(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
 
   const emptyManual = { nro_partida: '', titular_nombre: '', titular_dni: '', titular_domicilio: '', zona: '', codigo_postal: '', monto_capital: '', monto_intereses: '', cuotas_adeudadas: '' };
   const [manualModal, setManualModal] = useState(false);
@@ -196,21 +207,38 @@ export default function PartidaListPage() {
     cargar(p, applied);
   };
 
-  const handleImport = async (e) => {
+  // Paso 1: subir padrón y obtener diff (sin aplicar)
+  const handlePadronPreview = async (e) => {
     e.preventDefault();
-    if (!importFile) return sileo.error({ title: 'Seleccioná un archivo TXT' });
+    if (!importFile) return sileo.error({ title: 'Seleccioná el archivo del padrón' });
     setImporting(true);
     try {
       const fd = new FormData();
       fd.append('archivo', importFile);
-      await partidaApi.importarTxt(fd);
-      sileo.success({ title: 'Importación iniciada correctamente' });
-      setImportModal(false);
-      setImportFile(null);
-      if (fileRef.current) fileRef.current.value = '';
+      const diff = await padronApi.preview(fd);
+      setPadronDiff(diff);
+      setPadronStep('preview');
+    } catch (err) {
+      sileo.error({ title: 'Error al analizar el padrón', description: err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Paso 2: confirmar y aplicar
+  const handlePadronConfirm = async () => {
+    if (!padronDiff?.token) return;
+    setImporting(true);
+    try {
+      const res = await padronApi.confirmar(padronDiff.token);
+      sileo.success({
+        title: 'Padrón actualizado',
+        description: `${res.insertadas} nuevas · ${res.actualizadas} actualizadas`,
+      });
+      resetPadron();
       cargar(1, applied);
     } catch (err) {
-      sileo.error({ title: 'Error al importar', description: err.message });
+      sileo.error({ title: 'Error al aplicar el padrón', description: err.message });
     } finally {
       setImporting(false);
     }
@@ -277,9 +305,9 @@ export default function PartidaListPage() {
                   <IconPlus />
                   <span>Nueva partida</span>
                 </button>
-                <button type="button" className="pj-list-btn pj-list-btn--glass" onClick={() => setImportModal(true)}>
+                <button type="button" className="pj-list-btn pj-list-btn--glass" onClick={() => { setPadronStep('upload'); setPadronDiff(null); setImportFile(null); setImportModal(true); }}>
                   <IconUpload />
-                  <span>Importar TXT</span>
+                  <span>Actualizar Padrón</span>
                 </button>
               </div>
             )}
@@ -555,31 +583,93 @@ export default function PartidaListPage() {
         </form>
       </PjListModal>
 
-      {/* ── MODAL: Importar TXT ── */}
-      <PjListModal open={importModal} onClose={() => setImportModal(false)} title="Importar Partidas TXT">
-        <form onSubmit={handleImport}>
-          <p className="pj-list-modal-desc">
-            Seleccioná un archivo en formato TXT o CSV con las partidas a importar.
-          </p>
-          <div className="pj-list-modal-field">
-            <label className="pj-list-modal-label">Archivo TXT / CSV</label>
-            <input
-              ref={fileRef}
-              className="pj-list-modal-input pj-list-modal-input--file"
-              type="file"
-              accept=".txt,.csv"
-              onChange={e => setImportFile(e.target.files[0] || null)}
-            />
+      {/* ── MODAL: Actualizar Padrón (dry-run + confirmar) ── */}
+      <PjListModal open={importModal} onClose={resetPadron} title="Actualizar Padrón" wide={padronStep === 'preview'}>
+        {padronStep === 'upload' && (
+          <form onSubmit={handlePadronPreview}>
+            <p className="pj-list-modal-desc">
+              Subí el padrón municipal (.txt / .DAT). Se analizará y verás qué partidas se crean
+              o actualizan <strong>antes</strong> de aplicar los cambios.
+            </p>
+            <div className="pj-list-modal-field">
+              <label className="pj-list-modal-label">Archivo del padrón</label>
+              <input
+                ref={fileRef}
+                className="pj-list-modal-input pj-list-modal-input--file"
+                type="file"
+                accept=".txt,.dat,.DAT"
+                onChange={e => setImportFile(e.target.files[0] || null)}
+              />
+            </div>
+            <div className="pj-list-modal-actions">
+              <button type="button" className="pj-list-btn pj-list-btn--ghost" onClick={resetPadron}>
+                Cancelar
+              </button>
+              <button type="submit" className="pj-list-btn pj-list-btn--primary" disabled={importing}>
+                {importing ? 'Analizando...' : 'Analizar'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {padronStep === 'preview' && padronDiff && (
+          <div>
+            <p className="pj-list-modal-desc">
+              <strong>{padronDiff.nombre_archivo}</strong> — revisá los cambios antes de confirmar.
+            </p>
+            <div className="pj-padron-resumen">
+              <span className="pj-padron-chip pj-padron-chip--new">{padronDiff.resumen.nuevas} nuevas</span>
+              <span className="pj-padron-chip pj-padron-chip--upd">{padronDiff.resumen.actualizar} a actualizar</span>
+              <span className="pj-padron-chip">{padronDiff.resumen.sin_cambios} sin cambios</span>
+              {padronDiff.resumen.duplicadas_archivo > 0 && (
+                <span className="pj-padron-chip pj-padron-chip--warn">{padronDiff.resumen.duplicadas_archivo} duplicadas en archivo</span>
+              )}
+              {padronDiff.resumen.invalidas > 0 && (
+                <span className="pj-padron-chip pj-padron-chip--err">{padronDiff.resumen.invalidas} líneas inválidas</span>
+              )}
+            </div>
+
+            {padronDiff.muestra?.length > 0 && (
+              <div className="pj-padron-muestra">
+                <table className="pj-table">
+                  <thead>
+                    <tr><th>Partida</th><th>Titular</th><th>Acción</th><th>Cambios</th></tr>
+                  </thead>
+                  <tbody>
+                    {padronDiff.muestra.map((m, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 600 }}>{m.nro_partida}</td>
+                        <td>{m.titular || '—'}</td>
+                        <td>{m.accion === 'nueva' ? 'Nueva' : 'Actualizar'}</td>
+                        <td style={{ fontSize: '0.8rem' }}>
+                          {m.accion === 'nueva'
+                            ? '—'
+                            : Object.entries(m.cambios).slice(0, 4).map(([campo, v]) => (
+                                <div key={campo}>
+                                  <strong>{campo}</strong>: {String(v.antes ?? '∅')} → {String(v.despues ?? '∅')}
+                                </div>
+                              ))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="pj-list-modal-desc" style={{ fontSize: '0.78rem' }}>
+                  Mostrando hasta {padronDiff.muestra.length} de {padronDiff.resumen.nuevas + padronDiff.resumen.actualizar} cambios.
+                </p>
+              </div>
+            )}
+
+            <div className="pj-list-modal-actions">
+              <button type="button" className="pj-list-btn pj-list-btn--ghost" onClick={() => setPadronStep('upload')}>
+                Volver
+              </button>
+              <button type="button" className="pj-list-btn pj-list-btn--primary" disabled={importing} onClick={handlePadronConfirm}>
+                {importing ? 'Aplicando...' : `Confirmar (${padronDiff.resumen.nuevas + padronDiff.resumen.actualizar} cambios)`}
+              </button>
+            </div>
           </div>
-          <div className="pj-list-modal-actions">
-            <button type="button" className="pj-list-btn pj-list-btn--ghost" onClick={() => setImportModal(false)}>
-              Cancelar
-            </button>
-            <button type="submit" className="pj-list-btn pj-list-btn--primary" disabled={importing}>
-              {importing ? 'Importando...' : 'Importar'}
-            </button>
-          </div>
-        </form>
+        )}
       </PjListModal>
     </AppLayout>
   );

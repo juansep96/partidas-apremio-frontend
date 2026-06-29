@@ -31,9 +31,21 @@ async function fetchFormData(url, formData) {
 export const partidaApi = {
   list: (params = {}) => apiRequest(`/pj/partidas?${new URLSearchParams(params)}`),
   preview: (params = {}) => apiRequest(`/pj/partidas/preview-segmentacion?${new URLSearchParams(params)}`),
-  importarTxt: (formData) => fetchFormData('/pj/partidas/importar-txt', formData),
   excluirTxt: (formData) => fetchFormData('/pj/partidas/excluir-txt', formData),
   crearManual: (data) => apiRequest('/pj/partidas/manual', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// Proceso 1 — Padrón (datos maestros). preview = dry-run con diff; confirmar = aplica.
+export const padronApi = {
+  preview: (formData) => fetchFormData('/pj/padron/preview', formData),
+  confirmar: (token) => apiRequest('/pj/padron/confirmar', { method: 'POST', body: JSON.stringify({ token }) }),
+};
+
+// Proceso 2 — TSU/.DAT. iniciar = primera carga (devuelve conflictos+token);
+// confirmar = re-intima los conflictos forzados (nuevo apremio).
+export const apremioApi = {
+  iniciar: (formData) => fetchFormData('/pj/apremio/iniciar', formData),
+  confirmar: (token, forzar) => apiRequest('/pj/apremio/iniciar', { method: 'POST', body: JSON.stringify({ token, forzar }) }),
 };
 
 export const legajoApi = {

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { sileo } from 'sileo';
 import * as XLSX from 'xlsx';
 import AppLayout from '../../components/AppLayout';
-import { partidaApi, loteApi } from '../../api/recaudacionApi';
+import { partidaApi, loteApi, apremioApi } from '../../api/recaudacionApi';
 import './IntimacionPage.css';
 
 function formatMonto(n) {
@@ -49,6 +49,61 @@ export default function IntimacionPage() {
   const [saving, setSaving] = useState(false);
   const [loteGenerado, setLoteGenerado] = useState(null);
   const fileRef = useRef(null);
+  // Apremio (proceso 2 — TSU/.DAT)
+  const [apremioFile, setApremioFile] = useState(null);
+  const [apremioReport, setApremioReport] = useState(null);
+  const [forzar, setForzar] = useState(new Set());
+  const apremioFileRef = useRef(null);
+
+  const resetApremio = () => {
+    setModal(null);
+    setApremioFile(null);
+    setApremioReport(null);
+    setForzar(new Set());
+    if (apremioFileRef.current) apremioFileRef.current.value = '';
+  };
+
+  const handleApremioIniciar = async (e) => {
+    e.preventDefault();
+    if (!apremioFile) return sileo.error({ title: 'Seleccioná el archivo TSU/.DAT' });
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append('archivo', apremioFile);
+      const res = await apremioApi.iniciar(fd);
+      setApremioReport(res);
+      setForzar(new Set());
+      sileo.success({ title: `Apremio iniciado: ${res.iniciados} legajos creados` });
+      if (previewDone) handlePreview();
+    } catch (err) {
+      sileo.error({ title: 'Error al iniciar apremio', description: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleForzar = (nro) => {
+    setForzar(prev => {
+      const next = new Set(prev);
+      next.has(nro) ? next.delete(nro) : next.add(nro);
+      return next;
+    });
+  };
+
+  const handleApremioConfirmarConflictos = async () => {
+    if (forzar.size === 0 || !apremioReport?.token) return;
+    setSaving(true);
+    try {
+      const res = await apremioApi.confirmar(apremioReport.token, Array.from(forzar));
+      sileo.success({ title: `${res.iniciados} nuevos apremios generados` });
+      resetApremio();
+      if (previewDone) handlePreview();
+    } catch (err) {
+      sileo.error({ title: 'Error al confirmar', description: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handlePreview = async () => {
     setPreviewing(true);
@@ -313,6 +368,13 @@ export default function IntimacionPage() {
               <div className="pj-sidebar-title">Acciones</div>
               <button
                 type="button"
+                className="pj-btn pj-btn--primary pj-btn--sm"
+                onClick={() => { setModal('apremio'); setApremioReport(null); setApremioFile(null); setForzar(new Set()); }}
+              >
+                Iniciar Apremio (TSU/.DAT)
+              </button>
+              <button
+                type="button"
                 className="pj-btn pj-btn--ghost pj-btn--sm"
                 onClick={() => { setModal('exclusion'); setModalForm({}); }}
               >
@@ -332,6 +394,109 @@ export default function IntimacionPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal: Iniciar Apremio (TSU/.DAT) */}
+      {modal === 'apremio' && (
+        <div className="pj-modal-overlay" onClick={e => e.target === e.currentTarget && resetApremio()}>
+          <div className="pj-modal pj-modal--wide">
+            <h2>Iniciar Apremio — Archivo de Deuda (TSU/.DAT)</h2>
+
+            {!apremioReport ? (
+              <form onSubmit={handleApremioIniciar}>
+                <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                  Subí el archivo TSU/.DAT con la deuda. Se creará un legajo (inicio de gestión) por cada
+                  partida sin apremio activo. Las partidas con un apremio en curso se listarán como conflicto
+                  para que decidas si generás un nuevo apremio.
+                </p>
+                <div className="pj-modal-field">
+                  <label>Archivo TSU / .DAT</label>
+                  <input
+                    ref={apremioFileRef}
+                    type="file"
+                    accept=".txt,.dat,.DAT"
+                    onChange={e => setApremioFile(e.target.files[0] || null)}
+                  />
+                </div>
+                <div className="pj-modal-actions">
+                  <button type="button" className="pj-btn pj-btn--ghost" onClick={resetApremio}>Cancelar</button>
+                  <button type="submit" className="pj-btn pj-btn--primary" disabled={saving}>
+                    {saving ? 'Procesando...' : 'Iniciar Apremio'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div>
+                <div className="pj-apremio-resumen">
+                  <span className="pj-padron-chip pj-padron-chip--new">{apremioReport.iniciados} apremios iniciados</span>
+                  {apremioReport.conflictos?.length > 0 && (
+                    <span className="pj-padron-chip pj-padron-chip--warn">{apremioReport.conflictos.length} con apremio activo</span>
+                  )}
+                  {apremioReport.huerfanos?.length > 0 && (
+                    <span className="pj-padron-chip pj-padron-chip--err">{apremioReport.huerfanos.length} sin padrón</span>
+                  )}
+                  {apremioReport.errores?.length > 0 && (
+                    <span className="pj-padron-chip pj-padron-chip--err">{apremioReport.errores.length} errores</span>
+                  )}
+                </div>
+
+                {apremioReport.huerfanos?.length > 0 && (
+                  <p style={{ fontSize: '0.8rem', color: '#991b1b' }}>
+                    Sin padrón (no se puede generar carta documento): {apremioReport.huerfanos.slice(0, 30).join(', ')}
+                    {apremioReport.huerfanos.length > 30 ? '…' : ''}. Actualizá el padrón primero.
+                  </p>
+                )}
+
+                {apremioReport.conflictos?.length > 0 && (
+                  <>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: 4 }}>
+                      Partidas con apremio activo — marcá las que querés re-intimar (genera un nuevo apremio):
+                    </p>
+                    <div style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                      <table className="pj-table">
+                        <thead>
+                          <tr>
+                            <th>
+                              <input
+                                type="checkbox"
+                                checked={forzar.size === apremioReport.conflictos.length}
+                                onChange={() => setForzar(forzar.size === apremioReport.conflictos.length
+                                  ? new Set()
+                                  : new Set(apremioReport.conflictos.map(c => c.nro)))}
+                              />
+                            </th>
+                            <th>Partida</th>
+                            <th>Total deuda</th>
+                            <th>Cuotas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {apremioReport.conflictos.map(c => (
+                            <tr key={c.nro}>
+                              <td><input type="checkbox" checked={forzar.has(c.nro)} onChange={() => toggleForzar(c.nro)} /></td>
+                              <td style={{ fontWeight: 600 }}>{c.nro}</td>
+                              <td>{formatMonto(c.monto_total)}</td>
+                              <td>{c.cuotas}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+
+                <div className="pj-modal-actions">
+                  <button type="button" className="pj-btn pj-btn--ghost" onClick={resetApremio}>Cerrar</button>
+                  {apremioReport.conflictos?.length > 0 && (
+                    <button type="button" className="pj-btn pj-btn--primary" disabled={saving || forzar.size === 0} onClick={handleApremioConfirmarConflictos}>
+                      {saving ? 'Generando...' : `Re-intimar ${forzar.size} seleccionadas`}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal: Exclusión TXT */}
       {modal === 'exclusion' && (
