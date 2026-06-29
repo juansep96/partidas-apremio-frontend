@@ -144,8 +144,10 @@ export default function PartidaListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({ q: '', estado: '', zona: '', abogado_id: '' });
-  const [applied, setApplied] = useState({ q: '', estado: '', zona: '', abogado_id: '' });
+  const EMPTY_FILTERS = { q: '', estado: '', zona: '', abogado_id: '', localidad: '', circunscripcion: '', ejercicio: '', con_contacto: false };
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [applied, setApplied] = useState(EMPTY_FILTERS);
+  const [moreFilters, setMoreFilters] = useState(false);
   const [importModal, setImportModal] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -176,9 +178,18 @@ export default function PartidaListPage() {
       if (f.estado) params.estado = f.estado;
       if (f.zona) params.zona = f.zona;
       if (f.abogado_id) params.abogado_id = f.abogado_id;
+      if (f.localidad) params.localidad = f.localidad;
+      if (f.circunscripcion) params.circunscripcion = f.circunscripcion;
+      if (f.ejercicio) params.ejercicio = f.ejercicio;
+      if (f.con_contacto) params.con_contacto = 1;
       const res = await legajoApi.list(params);
       setLegajos(res.data || res || []);
-      setMeta(res.meta || null);
+      // Laravel paginator trae total/per_page/current_page al nivel raíz (no en `meta`)
+      const meta = res.meta
+        || (res.total !== undefined
+          ? { total: res.total, per_page: res.per_page, current_page: res.current_page, last_page: res.last_page }
+          : null);
+      setMeta(meta);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -195,11 +206,10 @@ export default function PartidaListPage() {
   };
 
   const handleClear = () => {
-    const empty = { q: '', estado: '', zona: '', abogado_id: '' };
-    setFilters(empty);
-    setApplied(empty);
+    setFilters(EMPTY_FILTERS);
+    setApplied(EMPTY_FILTERS);
     setPage(1);
-    cargar(1, empty);
+    cargar(1, EMPTY_FILTERS);
   };
 
   const handlePage = (p) => {
@@ -378,6 +388,9 @@ export default function PartidaListPage() {
             />
           </div>
 
+          <button type="button" className="pj-list-filter-clear" onClick={() => setMoreFilters(o => !o)}>
+            {moreFilters ? 'Menos filtros ▴' : 'Más filtros ▾'}
+          </button>
           <button type="button" className="pj-list-btn pj-list-btn--primary pj-list-btn--sm" onClick={handleApply}>
             Filtrar
           </button>
@@ -385,6 +398,32 @@ export default function PartidaListPage() {
             Limpiar
           </button>
         </div>
+
+        {/* ── FILTROS AVANZADOS ── */}
+        {moreFilters && (
+          <div className="pj-list-filter-bar pj-list-filter-bar--more">
+            <div className="pj-list-filter-field">
+              <input type="text" className="pj-list-filter-input" placeholder="Localidad"
+                value={filters.localidad} onChange={e => setFilters(p => ({ ...p, localidad: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleApply()} />
+            </div>
+            <div className="pj-list-filter-field">
+              <input type="text" className="pj-list-filter-input" placeholder="Circunscripción"
+                value={filters.circunscripcion} onChange={e => setFilters(p => ({ ...p, circunscripcion: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleApply()} />
+            </div>
+            <div className="pj-list-filter-field">
+              <input type="number" className="pj-list-filter-input" placeholder="Ejercicio (año)"
+                value={filters.ejercicio} onChange={e => setFilters(p => ({ ...p, ejercicio: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleApply()} />
+            </div>
+            <label className="pj-list-filter-checklabel">
+              <input type="checkbox" checked={filters.con_contacto}
+                onChange={e => setFilters(p => ({ ...p, con_contacto: e.target.checked }))} />
+              Solo con contacto (mail/tel)
+            </label>
+          </div>
+        )}
 
         {/* ── CONTENT ── */}
         <div className="pj-list-content">

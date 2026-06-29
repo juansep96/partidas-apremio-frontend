@@ -796,3 +796,8 @@
 .pj-padron-chip--warn { background: #fef9c3; color: #854d0e; }
 .pj-padron-chip--err  { background: #fee2e2; color: #991b1b; }
 .pj-padron-muestra { max-height: 360px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+/* ── Filtros avanzados ── */
+.pj-list-filter-bar--more { margin-top: 8px; align-items: center; }
+.pj-list-filter-checklabel { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #475569; cursor: pointer; white-space: nowrap; }
+.pj-list-filter-checklabel input { width: auto; }

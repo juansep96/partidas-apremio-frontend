@@ -41,11 +41,11 @@ export const padronApi = {
   confirmar: (token) => apiRequest('/pj/padron/confirmar', { method: 'POST', body: JSON.stringify({ token }) }),
 };
 
-// Proceso 2 — TSU/.DAT. iniciar = primera carga (devuelve conflictos+token);
-// confirmar = re-intima los conflictos forzados (nuevo apremio).
+// Proceso 2 — TSU/.DAT. preview = vista previa sin escribir (devuelve items+token);
+// confirmar = crea legajos solo para los nro_partida seleccionados.
 export const apremioApi = {
-  iniciar: (formData) => fetchFormData('/pj/apremio/iniciar', formData),
-  confirmar: (token, forzar) => apiRequest('/pj/apremio/iniciar', { method: 'POST', body: JSON.stringify({ token, forzar }) }),
+  preview: (formData) => fetchFormData('/pj/apremio/preview', formData),
+  confirmar: (token, cargar) => apiRequest('/pj/apremio/confirmar', { method: 'POST', body: JSON.stringify({ token, cargar }) }),
 };
 
 export const legajoApi = {
