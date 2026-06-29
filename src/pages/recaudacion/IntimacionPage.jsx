@@ -75,8 +75,8 @@ function PeriodosDetalle({ periodos }) {
   );
 }
 
-function Paginacion({ page, total, onPage }) {
-  const pages = Math.ceil(total / PAGE_SIZE);
+function Paginacion({ page, total, onPage, perPage = PAGE_SIZE }) {
+  const pages = Math.ceil(total / perPage);
   if (pages <= 1) return null;
   const nums = new Set([1, pages, page, page - 1, page + 1].filter(p => p >= 1 && p <= pages));
   const arr = Array.from(nums).sort((a, b) => a - b);
@@ -104,9 +104,13 @@ export default function IntimacionPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [resultados, setResultados] = useState([]);
+  const [meta, setMeta] = useState(null); // { total, per_page, current_page, last_page }
+  const [totalesFiltro, setTotalesFiltro] = useState({ capital: 0, intereses: 0 });
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [previewing, setPreviewing] = useState(false);
   const [previewDone, setPreviewDone] = useState(false);
   const [selected, setSelected] = useState(new Set());
+  const [selectingAll, setSelectingAll] = useState(false);
   const [resPage, setResPage] = useState(1);
   const [expanded, setExpanded] = useState(null);
   const [modal, setModal] = useState(null); // 'exclusion' | 'generar' | 'apremio'
@@ -129,20 +133,26 @@ export default function IntimacionPage() {
     [filters]
   );
 
-  const handlePreview = async () => {
+  const buildParams = (f) => {
+    const params = {};
+    Object.entries(f).forEach(([k, v]) => {
+      if (v === '' || v === false) return;
+      params[k] = v === true ? 1 : v;
+    });
+    return params;
+  };
+
+  // Trae una página. resetSel=true cuando se aplican filtros nuevos.
+  const buscar = async (page, f, resetSel) => {
     setPreviewing(true);
     try {
-      const params = {};
-      Object.entries(filters).forEach(([k, v]) => {
-        if (v === '' || v === false) return;
-        params[k] = v === true ? 1 : v;
-      });
-      const res = await partidaApi.preview(params);
-      const data = res.data || [];
-      setResultados(Array.isArray(data) ? data : []);
-      setSelected(new Set());
-      setResPage(1);
+      const res = await partidaApi.preview({ ...buildParams(f), page, per_page: 50 });
+      setResultados(Array.isArray(res.data) ? res.data : []);
+      setMeta({ total: res.total ?? 0, per_page: res.per_page ?? 50, current_page: res.current_page ?? 1, last_page: res.last_page ?? 1 });
+      setTotalesFiltro({ capital: res.total_monto_capital ?? 0, intereses: res.total_monto_intereses ?? 0 });
+      setResPage(res.current_page ?? page);
       setExpanded(null);
+      if (resetSel) setSelected(new Set());
       setPreviewDone(true);
     } catch (err) {
       sileo.error({ title: 'Error en vista previa', description: err.message });
@@ -151,11 +161,25 @@ export default function IntimacionPage() {
     }
   };
 
-  const pageResultados = resultados.slice((resPage - 1) * PAGE_SIZE, resPage * PAGE_SIZE);
+  const handlePreview = () => {
+    setAppliedFilters(filters);
+    buscar(1, filters, true);
+  };
+  const handlePage = (p) => buscar(p, appliedFilters, false);
 
+  // pageResultados = la página actual ya viene del server
+  const pageResultados = resultados;
+
+  // Selección sobre la página visible
+  const pageIds = resultados.map(r => r.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every(id => selected.has(id));
   const toggleAll = () => {
-    if (selected.size === resultados.length) setSelected(new Set());
-    else setSelected(new Set(resultados.map(r => r.id)));
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (allPageSelected) pageIds.forEach(id => next.delete(id));
+      else pageIds.forEach(id => next.add(id));
+      return next;
+    });
   };
   const toggleItem = (id) => {
     setSelected(prev => {
@@ -165,9 +189,28 @@ export default function IntimacionPage() {
     });
   };
 
-  const totalCapitalSeleccionado = resultados
-    .filter(r => selected.has(r.id))
-    .reduce((acc, r) => acc + (parseFloat(r.monto_capital) || 0), 0);
+  // Seleccionar TODAS las que matchean el filtro (todas las páginas)
+  const seleccionarTodas = async () => {
+    setSelectingAll(true);
+    try {
+      const res = await partidaApi.preview({ ...buildParams(appliedFilters), solo_ids: 1 });
+      setSelected(new Set(res.ids || []));
+      sileo.success({ title: `${(res.ids || []).length} partidas seleccionadas` });
+    } catch (err) {
+      sileo.error({ title: 'Error', description: err.message });
+    } finally {
+      setSelectingAll(false);
+    }
+  };
+
+  const exportar = async () => {
+    try {
+      const res = await partidaApi.preview({ ...buildParams(appliedFilters), export: 1 });
+      exportarExcel(res.data || []);
+    } catch (err) {
+      sileo.error({ title: 'Error al exportar', description: err.message });
+    }
+  };
 
   // ── Apremio: vista previa ──
   const handleApremioPreview = async (e) => {
@@ -382,7 +425,7 @@ export default function IntimacionPage() {
                       {previewing ? 'Cargando...' : 'Vista Previa'}
                     </button>
                     <button type="button" className="pj-btn pj-btn--ghost pj-btn--sm"
-                      onClick={() => { setFilters(EMPTY_FILTERS); setResultados([]); setPreviewDone(false); setSelected(new Set()); }}>
+                      onClick={() => { setFilters(EMPTY_FILTERS); setAppliedFilters(EMPTY_FILTERS); setResultados([]); setMeta(null); setPreviewDone(false); setSelected(new Set()); }}>
                       Limpiar
                     </button>
                   </div>
@@ -394,14 +437,19 @@ export default function IntimacionPage() {
             {previewDone && (
               <div className="pj-results-panel">
                 <div className="pj-results-header">
-                  <span className="pj-results-title">{resultados.length} partidas encontradas{resultados.length >= 500 ? ' (máx. 500)' : ''}</span>
-                  {resultados.length > 0 && (
-                    <button type="button" className="pj-btn pj-btn--ghost pj-btn--sm" onClick={() => exportarExcel(resultados)}>
-                      Exportar Excel
-                    </button>
+                  <span className="pj-results-title">{(meta?.total ?? 0).toLocaleString('es-AR')} partidas encontradas</span>
+                  {(meta?.total ?? 0) > 0 && (
+                    <div className="pj-results-actions">
+                      <button type="button" className="pj-btn pj-btn--ghost pj-btn--sm" onClick={seleccionarTodas} disabled={selectingAll}>
+                        {selectingAll ? 'Seleccionando...' : `Seleccionar todas (${(meta?.total ?? 0).toLocaleString('es-AR')})`}
+                      </button>
+                      <button type="button" className="pj-btn pj-btn--ghost pj-btn--sm" onClick={exportar}>
+                        Exportar Excel
+                      </button>
+                    </div>
                   )}
                 </div>
-                {resultados.length === 0 ? (
+                {(meta?.total ?? 0) === 0 ? (
                   <div className="pj-empty">Sin partidas para los filtros seleccionados.</div>
                 ) : (
                   <>
@@ -459,10 +507,10 @@ export default function IntimacionPage() {
                       </table>
                     </div>
                     <div className="pj-results-footer">
-                      <span>Seleccionados: <strong>{selected.size}</strong></span>
-                      <span>Capital total seleccionado: <strong>{formatMonto(totalCapitalSeleccionado)}</strong></span>
+                      <span>Seleccionados: <strong>{selected.size.toLocaleString('es-AR')}</strong> de {(meta?.total ?? 0).toLocaleString('es-AR')}</span>
+                      <span>Capital total del filtro: <strong>{formatMonto(totalesFiltro.capital)}</strong></span>
                     </div>
-                    <Paginacion page={resPage} total={resultados.length} onPage={setResPage} />
+                    <Paginacion page={resPage} total={meta?.total ?? 0} perPage={meta?.per_page ?? 50} onPage={handlePage} />
                   </>
                 )}
               </div>

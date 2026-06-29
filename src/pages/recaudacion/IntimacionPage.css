@@ -420,3 +420,4 @@
 /* ── Modal extra ancho + hint ── */
 .pj-modal--xwide { max-width: 1040px; width: 95%; }
 .pj-modal-hint { font-size: 0.85rem; color: #64748b; margin: 0 0 14px; }
+.pj-results-actions { display: flex; gap: 8px; }
