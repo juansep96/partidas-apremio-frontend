@@ -88,6 +88,9 @@ export default function AppLayout({ children }) {
                   Dashboard
                 </NavLink>
                 <NavLink to="/recaudacion/partidas" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
+                  Partidas
+                </NavLink>
+                <NavLink to="/recaudacion/legajos" className={({ isActive }) => `app-nav-link ${isActive ? 'active' : ''}`}>
                   Legajos
                 </NavLink>
                 {(isSuperAdmin || ['Recaudacion', 'Sistemas'].includes(recRole)) && (

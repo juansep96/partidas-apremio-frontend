@@ -26,6 +26,7 @@ import AuditoriaPage from './pages/AuditoriaPage';
 import AuditoriaSistemaPage from './pages/AuditoriaSistemaPage';
 import DashboardPage from './pages/recaudacion/DashboardPage';
 import PartidaListPage from './pages/recaudacion/PartidaListPage';
+import LegajoListPage from './pages/recaudacion/LegajoListPage';
 import LegajoDetailPage from './pages/recaudacion/LegajoDetailPage';
 import IntimacionPage from './pages/recaudacion/IntimacionPage';
 import BandejaSecretarioPage from './pages/recaudacion/BandejaSecretarioPage';
@@ -95,6 +96,7 @@ export default function App() {
             {/* Módulo Recaudación y Apremio */}
             <Route path="/recaudacion" element={<ProtectedRoute><RecaudacionRoute><DashboardPage /></RecaudacionRoute></ProtectedRoute>} />
             <Route path="/recaudacion/partidas" element={<ProtectedRoute><RecaudacionRoute><PartidaListPage /></RecaudacionRoute></ProtectedRoute>} />
+            <Route path="/recaudacion/legajos" element={<ProtectedRoute><RecaudacionRoute><LegajoListPage /></RecaudacionRoute></ProtectedRoute>} />
             <Route path="/recaudacion/legajos/:id" element={<ProtectedRoute><RecaudacionRoute><LegajoDetailPage /></RecaudacionRoute></ProtectedRoute>} />
             <Route path="/recaudacion/intimaciones" element={<ProtectedRoute><RecaudacionRoute roles={['Recaudacion','Sistemas']}><IntimacionPage /></RecaudacionRoute></ProtectedRoute>} />
             <Route path="/recaudacion/bandeja-secretario" element={<ProtectedRoute><RecaudacionRoute roles={['SecretarioLegal']}><BandejaSecretarioPage /></RecaudacionRoute></ProtectedRoute>} />

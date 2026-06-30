@@ -4,40 +4,13 @@ import { sileo } from 'sileo';
 import AppLayout from '../../components/AppLayout';
 import EstadoBadge from '../../components/recaudacion/EstadoBadge';
 import { useAuth } from '../../context/AuthContext';
-import { legajoApi, partidaApi, padronApi } from '../../api/recaudacionApi';
+import { partidaApi, padronApi } from '../../api/recaudacionApi';
 import './PartidaListPage.css';
 
 function formatMonto(n) {
   if (n == null) return '—';
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 }
-
-const ESTADOS = [
-  '', 'deuda_informada', 'en_intimacion', 'notificada', 'rechazada',
-  'marcada_apremio', 'asignada_legales', 'en_juicio', 'finalizada',
-];
-
-const ESTADO_LABELS = {
-  deuda_informada: 'Deuda Informada',
-  en_intimacion: 'En Intimación',
-  notificada: 'Notificada',
-  rechazada: 'Rechazada',
-  marcada_apremio: 'Marcada Apremio',
-  asignada_legales: 'Asignada Legales',
-  en_juicio: 'En Juicio',
-  finalizada: 'Finalizada',
-};
-
-const ESTADO_COLORS = {
-  deuda_informada: '#94a3b8',
-  en_intimacion: '#f59e0b',
-  notificada: '#3b82f6',
-  rechazada: '#ef4444',
-  marcada_apremio: '#f97316',
-  asignada_legales: '#8b5cf6',
-  en_juicio: '#6366f1',
-  finalizada: '#10b981',
-};
 
 // SVG Icons
 const IconSearch = () => (
@@ -97,35 +70,38 @@ function PjListModal({ open, onClose, title, children, wide }) {
   );
 }
 
-// Legajo card row
-function LegajoCard({ legajo }) {
-  const estado = legajo.estado;
-  const color = ESTADO_COLORS[estado] || '#94a3b8';
-  const nroPartida = legajo.partida?.nro_partida || legajo.nro_partida || `#${legajo.id}`;
-  const titular = legajo.partida?.titular_nombre || legajo.partida?.titular || legajo.titular || '—';
-  const capital = legajo.partida?.monto_capital ?? legajo.monto_capital ?? null;
-  const zona = legajo.partida?.zona || legajo.zona || null;
+// Partida card row
+function PartidaCard({ partida }) {
+  const legajo = partida.legajos?.[0] || null;
+  const color = legajo ? '#6366f1' : '#94a3b8';
+  const capital = partida.monto_capital ?? null;
+  const cuotas = partida.cuotas_adeudadas ?? null;
 
   return (
     <div className="pj-list-card" style={{ '--estado-color': color }}>
       <div className="pj-list-card-strip" />
       <div className="pj-list-card-main">
         <div className="pj-list-card-left">
-          <span className="pj-list-card-partida">{nroPartida}</span>
-          <span className="pj-list-card-titular">{titular}</span>
+          <span className="pj-list-card-partida">{partida.nro_partida}</span>
+          <span className="pj-list-card-titular">{partida.titular_nombre || '—'}</span>
         </div>
         <div className="pj-list-card-right">
           {capital != null && (
             <span className="pj-list-card-capital">{formatMonto(capital)}</span>
           )}
           <div className="pj-list-card-badges">
-            <EstadoBadge estado={estado} />
-            {zona && <span className="pj-list-card-zona">{zona}</span>}
+            {legajo
+              ? <EstadoBadge estado={legajo.estado} />
+              : <span className="pj-list-card-zona">Sin apremio</span>}
+            {partida.zona && <span className="pj-list-card-zona">{partida.zona}</span>}
+            {cuotas != null && cuotas > 0 && <span className="pj-list-card-zona">{cuotas} cuotas</span>}
           </div>
-          <Link to={`/recaudacion/legajos/${legajo.id}`} className="pj-list-card-link">
-            <span>Ver legajo</span>
-            <IconArrowRight />
-          </Link>
+          {legajo && (
+            <Link to={`/recaudacion/legajos/${legajo.id}`} className="pj-list-card-link">
+              <span>Ver legajo</span>
+              <IconArrowRight />
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -139,12 +115,12 @@ export default function PartidaListPage() {
   const isSuperAdmin = user?.globalRole === 'SUPERADMIN';
   const canImport = isSuperAdmin || ['Sistemas', 'Recaudacion'].includes(pjRole);
 
-  const [legajos, setLegajos] = useState([]);
+  const [partidas, setPartidas] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const EMPTY_FILTERS = { q: '', estado: '', zona: '', abogado_id: '', localidad: '', circunscripcion: '', ejercicio: '', con_contacto: false };
+  const EMPTY_FILTERS = { q: '', zona: '', codigo_postal: '', cuotas_min: '', monto_min: '' };
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [applied, setApplied] = useState(EMPTY_FILTERS);
   const [moreFilters, setMoreFilters] = useState(false);
@@ -175,15 +151,12 @@ export default function PartidaListPage() {
     try {
       const params = { page: p, per_page: 15 };
       if (f.q) params.q = f.q;
-      if (f.estado) params.estado = f.estado;
       if (f.zona) params.zona = f.zona;
-      if (f.abogado_id) params.abogado_id = f.abogado_id;
-      if (f.localidad) params.localidad = f.localidad;
-      if (f.circunscripcion) params.circunscripcion = f.circunscripcion;
-      if (f.ejercicio) params.ejercicio = f.ejercicio;
-      if (f.con_contacto) params.con_contacto = 1;
-      const res = await legajoApi.list(params);
-      setLegajos(res.data || res || []);
+      if (f.codigo_postal) params.codigo_postal = f.codigo_postal;
+      if (f.cuotas_min) params.cuotas_min = f.cuotas_min;
+      if (f.monto_min) params.monto_min = f.monto_min;
+      const res = await partidaApi.list(params);
+      setPartidas(res.data || res || []);
       // Laravel paginator trae total/per_page/current_page al nivel raíz (no en `meta`)
       const meta = res.meta
         || (res.total !== undefined
@@ -265,7 +238,7 @@ export default function PartidaListPage() {
         cuotas_adeudadas: parseInt(manualForm.cuotas_adeudadas) || 0,
       };
       const legajo = await partidaApi.crearManual(payload);
-      sileo.success({ title: 'Partida creada', description: `Legajo ${legajo.partida?.nro_partida || ''} en estado Deuda Informada` });
+      sileo.success({ title: 'Partida creada', description: `Partida ${legajo.partida?.nro_partida || ''} en estado Deuda Informada` });
       setManualModal(false);
       setManualForm(emptyManual);
       cargar(1, applied);
@@ -279,9 +252,9 @@ export default function PartidaListPage() {
   const totalPages = meta ? Math.ceil(meta.total / (meta.per_page || 15)) : 1;
 
   // Stats derived from loaded data
-  const enProceso = legajos.filter(l => !['finalizada', 'rechazada'].includes(l.estado)).length;
-  const finalizadas = legajos.filter(l => l.estado === 'finalizada').length;
-  const totalCapital = legajos.reduce((s, l) => s + (l.partida?.monto_capital || l.monto_capital || 0), 0);
+  const conApremio = partidas.filter(p => p.legajos?.length > 0).length;
+  const sinApremio = partidas.filter(p => !(p.legajos?.length > 0)).length;
+  const totalCapital = partidas.reduce((s, p) => s + (Number(p.monto_capital) || 0), 0);
 
   // Build page number array for pagination
   const buildPages = () => {
@@ -302,10 +275,10 @@ export default function PartidaListPage() {
           <div className="pj-list-hero-content">
             <div className="pj-list-hero-left">
               <p className="pj-list-hero-eyebrow">Sistema Judicial Municipal</p>
-              <h1 className="pj-list-hero-title">Partidas y Legajos</h1>
+              <h1 className="pj-list-hero-title">Partidas</h1>
               {meta && (
                 <p className="pj-list-hero-subtitle">
-                  {meta.total.toLocaleString('es-AR')} legajos registrados en el sistema
+                  {meta.total.toLocaleString('es-AR')} partidas con deuda en el padrón
                 </p>
               )}
             </div>
@@ -338,13 +311,13 @@ export default function PartidaListPage() {
             </div>
             <div className="pj-list-stat-divider" />
             <div className="pj-list-stat">
-              <span className="pj-list-stat-value pj-list-stat-value--orange">{enProceso}</span>
-              <span className="pj-list-stat-label">En proceso</span>
+              <span className="pj-list-stat-value pj-list-stat-value--orange">{conApremio}</span>
+              <span className="pj-list-stat-label">Con apremio</span>
             </div>
             <div className="pj-list-stat-divider" />
             <div className="pj-list-stat">
-              <span className="pj-list-stat-value pj-list-stat-value--green">{finalizadas}</span>
-              <span className="pj-list-stat-label">Finalizadas</span>
+              <span className="pj-list-stat-value pj-list-stat-value--green">{sinApremio}</span>
+              <span className="pj-list-stat-label">Sin apremio</span>
             </div>
           </div>
         )}
@@ -357,24 +330,11 @@ export default function PartidaListPage() {
             <input
               type="text"
               className="pj-list-filter-input pj-list-filter-input--search"
-              placeholder="Buscar por partida, titular..."
+              placeholder="Buscar por partida, titular, DNI..."
               value={filters.q}
               onChange={e => setFilters(p => ({ ...p, q: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && handleApply()}
             />
-          </div>
-
-          {/* Estado */}
-          <div className="pj-list-filter-field">
-            <select
-              className="pj-list-filter-input pj-list-filter-input--select"
-              value={filters.estado}
-              onChange={e => setFilters(p => ({ ...p, estado: e.target.value }))}
-            >
-              {ESTADOS.map(e => (
-                <option key={e} value={e}>{e ? ESTADO_LABELS[e] : 'Todos los estados'}</option>
-              ))}
-            </select>
           </div>
 
           {/* Zona */}
@@ -385,6 +345,7 @@ export default function PartidaListPage() {
               placeholder="Zona"
               value={filters.zona}
               onChange={e => setFilters(p => ({ ...p, zona: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && handleApply()}
             />
           </div>
 
@@ -403,25 +364,20 @@ export default function PartidaListPage() {
         {moreFilters && (
           <div className="pj-list-filter-bar pj-list-filter-bar--more">
             <div className="pj-list-filter-field">
-              <input type="text" className="pj-list-filter-input" placeholder="Localidad"
-                value={filters.localidad} onChange={e => setFilters(p => ({ ...p, localidad: e.target.value }))}
+              <input type="text" className="pj-list-filter-input" placeholder="Código postal"
+                value={filters.codigo_postal} onChange={e => setFilters(p => ({ ...p, codigo_postal: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && handleApply()} />
             </div>
             <div className="pj-list-filter-field">
-              <input type="text" className="pj-list-filter-input" placeholder="Circunscripción"
-                value={filters.circunscripcion} onChange={e => setFilters(p => ({ ...p, circunscripcion: e.target.value }))}
+              <input type="number" className="pj-list-filter-input" placeholder="Cuotas mínimas"
+                value={filters.cuotas_min} onChange={e => setFilters(p => ({ ...p, cuotas_min: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && handleApply()} />
             </div>
             <div className="pj-list-filter-field">
-              <input type="number" className="pj-list-filter-input" placeholder="Ejercicio (año)"
-                value={filters.ejercicio} onChange={e => setFilters(p => ({ ...p, ejercicio: e.target.value }))}
+              <input type="number" className="pj-list-filter-input" placeholder="Monto mínimo ($)"
+                value={filters.monto_min} onChange={e => setFilters(p => ({ ...p, monto_min: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && handleApply()} />
             </div>
-            <label className="pj-list-filter-checklabel">
-              <input type="checkbox" checked={filters.con_contacto}
-                onChange={e => setFilters(p => ({ ...p, con_contacto: e.target.checked }))} />
-              Solo con contacto (mail/tel)
-            </label>
           </div>
         )}
 
@@ -430,7 +386,7 @@ export default function PartidaListPage() {
           {loading && (
             <div className="pj-list-loading-wrap">
               <div className="pj-list-spinner" />
-              <p>Cargando legajos...</p>
+              <p>Cargando partidas...</p>
             </div>
           )}
 
@@ -441,21 +397,21 @@ export default function PartidaListPage() {
             </div>
           )}
 
-          {!loading && !error && legajos.length === 0 && (
+          {!loading && !error && partidas.length === 0 && (
             <div className="pj-list-empty">
               <span className="pj-list-empty-icon"><IconInbox /></span>
               <p className="pj-list-empty-title">Sin resultados</p>
-              <p className="pj-list-empty-sub">No hay legajos que coincidan con los filtros seleccionados.</p>
+              <p className="pj-list-empty-sub">No hay partidas que coincidan con los filtros seleccionados.</p>
               <button type="button" className="pj-list-btn pj-list-btn--ghost pj-list-btn--sm" onClick={handleClear}>
                 Limpiar filtros
               </button>
             </div>
           )}
 
-          {!loading && !error && legajos.length > 0 && (
+          {!loading && !error && partidas.length > 0 && (
             <>
               <div className="pj-list-cards">
-                {legajos.map(l => <LegajoCard key={l.id} legajo={l} />)}
+                {partidas.map(p => <PartidaCard key={p.id} partida={p} />)}
               </div>
 
               {/* Pagination */}

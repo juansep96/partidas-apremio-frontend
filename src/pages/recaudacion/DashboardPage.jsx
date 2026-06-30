@@ -222,8 +222,8 @@ export default function DashboardPage() {
                     </svg>
                     Distribución por Estado
                   </span>
-                  <Link to="/recaudacion/partidas" className="pj-dash-section-link">
-                    Ver todas las partidas →
+                  <Link to="/recaudacion/legajos" className="pj-dash-section-link">
+                    Ver todos los legajos →
                   </Link>
                 </div>
                 <div className="pj-dash-section-body">
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                         {a.legajo?.partida?.nro_partida && (
                           <>
                             <span className="pj-dash-alert-sep">·</span>
-                            <Link to="/recaudacion/partidas" className="pj-dash-alert-partida">
+                            <Link to={`/recaudacion/legajos/${a.legajo.id}`} className="pj-dash-alert-partida">
                               #{a.legajo.partida.nro_partida}
                             </Link>
                           </>
@@ -353,7 +353,7 @@ function StackedBar({ porEstado, total }) {
   const entries = Object.entries(porEstado).filter(([, v]) => Number(v) > 0);
   return (
     <div>
-      <Link to="/recaudacion/partidas" style={{ textDecoration: 'none', display: 'block' }}>
+      <Link to="/recaudacion/legajos" style={{ textDecoration: 'none', display: 'block' }}>
         <div className="pj-dash-stacked-bar">
           {entries.map(([estado, count]) => {
             const pct = (Number(count) / total) * 100;
